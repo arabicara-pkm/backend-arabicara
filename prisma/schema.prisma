@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =================================
+//        AUTHENTICATION
+// =================================
+
+model user {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  username  String
+  password  String?  // << Dibuat opsional
+  avatar    String?
+  googleId  String?  @unique // << Ditambahkan, untuk menyimpan ID dari Google
+
+  role      String   @default("student")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  progress user_progress[]
+}
+
+// =================================
+//        DICTIONARY MODULE
+// =================================
+
+model dictionary_category {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Relations
+  vocabularies vocabulary[]
+}
+
+model vocabulary {
+  id                  Int     @id @default(autoincrement())
+  arabicText          String
+  indonesianText      String
+  arabicVoicePath     String? // Optional
+  indonesianVoicePath String? // Optional
+
+  // Relations
+  categoryId Int
+  category   dictionary_category @relation(fields: [categoryId], references: [id])
+}
+
+// =================================
+//        LEARNING MODULE
+// =================================
+
+model level {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  sequence    Int     @unique // To order the levels
+
+  // Relations
+  materials material[]
+}
+
+model material {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  voicePath String?
+  sequence  Int      // The order of the material within a level
+
+  // Relations
+  levelId   Int
+  level     level    @relation(fields: [levelId], references: [id])
+  exercises exercise[]
+  progress  user_progress[]
+
+  @@unique([levelId, sequence]) // A material's sequence must be unique within its level
+}
+
+model exercise {
+  id       Int    @id @default(autoincrement())
+  question String
+  type     String // e.g., 'MULTIPLE_CHOICE', 'SPEECH_TO_TEXT'
+
+  // Relations
+  materialId Int
+  material   material @relation(fields: [materialId], references: [id])
+  choices    answer_choice[]
+}
+
+model answer_choice {
+  id        Int     @id @default(autoincrement())
+  text      String
+  isCorrect Boolean
+
+  // Relations
+  exerciseId Int
+  exercise   exercise @relation(fields: [exerciseId], references: [id])
+}
+
+// =================================
+//        USER PROGRESS
+// =================================
+
+model user_progress {
+  id          Int      @id @default(autoincrement())
+  status      String   // e.g., 'COMPLETED', 'IN_PROGRESS'
+  score       Float?   // The score from the exercise
+  completedAt DateTime @default(now())
+
+  // Relations
+  userId     Int
+  user       user     @relation(fields: [userId], references: [id])
+  materialId Int
+  material   material @relation(fields: [materialId], references: [id])
+
+  @@unique([userId, materialId]) // A user can only have one progress entry per material
+}
