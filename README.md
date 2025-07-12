@@ -10,6 +10,7 @@ Ini adalah backend REST API untuk aplikasi belajar bahasa, dibangun dengan Node.
 - [Backend API - Arabicara](#backend-api---arabicara)
   - [Daftar Isi](#daftar-isi)
   - [Fitur Utama ✨](#fitur-utama-)
+  - [Dokumentasi API 📖](#dokumentasi-api-)
   - [Struktur Proyek 📂](#struktur-proyek-)
   - [Tumpukan Teknologi 🛠️](#tumpukan-teknologi-️)
   - [Prasyarat](#prasyarat)
@@ -27,6 +28,18 @@ Ini adalah backend REST API untuk aplikasi belajar bahasa, dibangun dengan Node.
 -   **Setup Admin:** Sistem *seeding* untuk membuat akun admin pertama secara otomatis.
 -   **Struktur Skalabel:** Arsitektur berlapis (Routes, Controllers, Services) untuk kemudahan pemeliharaan.
 -   **Dukungan Google OAuth:** Skema database sudah siap untuk implementasi login dengan Google.
+
+---
+
+## Dokumentasi API 📖
+Proyek ini menggunakan **Swagger** untuk menghasilkan dokumentasi API secara otomatis dan interaktif. Dokumentasi ini dibuat langsung dari komentar JSDoc di dalam kode, memastikan selalu sinkron dengan endpoint yang ada.
+
+Untuk mengakses dokumentasi:
+1.  Jalankan server development dengan `npm run dev`.
+2.  Buka browser Anda dan kunjungi:
+    **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
+
+
 
 ---
 
