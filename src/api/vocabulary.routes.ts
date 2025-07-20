@@ -1,20 +1,19 @@
-// // src/api/vocabulary.routes.ts
+// src/routes/vocabulary.route.ts
+import express from "express";
+import * as VocabularyController from "@/controllers/vocabulary.controller";
+import { validate } from "@/middlewares/validate";
+import { createVocabularySchema, updateVocabularySchema } from "@/schemas/vocabulary.schema";
+import { isAdmin } from "@/middlewares/auth.middleware"; // middleware untuk cek apakah user admin
 
-// import { Router } from 'express';
-// import * as VocabularyController from '../controllers/vocabulary.controller';
-// import { verifyToken, isAdmin } from '../middlewares/auth.middleware';
+const router = express.Router();
 
-// const router = Router();
+// Public Routes
+router.get("/", VocabularyController.getAllVocabulariesHandler);
+router.get("/:id", VocabularyController.getVocabularyHandler);
 
-// // Rute GET ini bersifat publik, semua orang bisa melihat kamus
-// router.get('/', VocabularyController.getAll);
+// Admin-only Routes
+router.post("/", isAdmin, validate(createVocabularySchema), VocabularyController.createVocabularyHandler);
+router.put("/:id", isAdmin, validate(updateVocabularySchema), VocabularyController.updateVocabularyHandler);
+router.delete("/:id", isAdmin, VocabularyController.deleteVocabularyHandler);
 
-// // Rute POST, PUT, DELETE ini dilindungi.
-// // Pertama, verifyToken akan memeriksa tokennya valid atau tidak.
-// // Jika valid, isAdmin akan memeriksa rolenya 'admin' atau bukan.
-// // Jika keduanya lolos, baru request akan diteruskan ke controller.
-// router.post('/', verifyToken, isAdmin, VocabularyController.create);
-// router.put('/:id', verifyToken, isAdmin, VocabularyController.update); // Asumsikan Anda sudah buat controller update
-// router.delete('/:id', verifyToken, isAdmin, VocabularyController.remove); // Asumsikan Anda sudah buat controller remove
-
-// export default router;
+export default router;
