@@ -1,6 +1,6 @@
 // src/controllers/vocabulary.controller.ts
 import { Request, Response } from "express";
-import * as VocabularyService from "@/services/vocabulary.service";
+import * as VocabularyService from "../services/vocabulary.service";
 
 export const getAllVocabulariesHandler = async (req: Request, res: Response) => {
   try {

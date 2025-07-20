@@ -6,7 +6,7 @@ import swaggerSpec from './config/swagger';
 import authRoutes from './api/auth.routes';
 import userRoutes from './api/user.routes';
 import vocabularyRoutes from "./api/vocabulary.routes";
-
+import categoryRoutes from './api/category.routes';
 
 
 dotenv.config();
@@ -20,7 +20,7 @@ app.use(express.json());
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use("/api/vocabularies", vocabularyRoutes);
-
+app.use('/api/categories', categoryRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 app.listen(port, () => {
