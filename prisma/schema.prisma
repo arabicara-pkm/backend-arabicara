@@ -18,112 +18,152 @@ datasource db {
 //        AUTHENTICATION
 // =================================
 
-model user {
-  id        Int      @id @default(autoincrement())
+model User {
+  id        String      @id @default(uuid())
   email     String   @unique
   username  String
-  password  String?  // << Dibuat opsional
+  password  String?
   avatar    String?
-  googleId  String?  @unique // << Ditambahkan, untuk menyimpan ID dari Google
+  googleId  String?  @unique
 
   role      String   @default("student")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  progress user_progress[]
+  levelProgress  UserLevelProgress[]
+  lessonProgress UserLessonProgress[]
 }
 
 // =================================
 //        DICTIONARY MODULE
 // =================================
 
-model dictionary_category {
+model DictionaryCategory {
   id   Int    @id @default(autoincrement())
   name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  vocabularies vocabulary[]
+  vocabularies Vocabulary[]
 }
 
-model vocabulary {
+model Vocabulary {
   id                  Int     @id @default(autoincrement())
   arabicText          String
   indonesianText      String
-  arabicVoicePath     String? // Optional
-  indonesianVoicePath String? // Optional
+  arabicVoicePath     String?
+  indonesianVoicePath String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   // Relations
   categoryId Int
-  category   dictionary_category @relation(fields: [categoryId], references: [id])
+  category   DictionaryCategory @relation(fields: [categoryId], references: [id])
 }
 
 // =================================
 //        LEARNING MODULE
 // =================================
 
-model level {
+model Level {
   id          Int     @id @default(autoincrement())
   name        String
   description String?
-  sequence    Int     @unique // To order the levels
+  sequence    Int     @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  materials material[]
+  lessons  Lesson[]
+  exercises Exercise[]
+  progress UserLevelProgress[]
 }
 
-model material {
-  id        Int      @id @default(autoincrement())
+model Lesson {
+  id        Int     @id @default(autoincrement())
   title     String
-  content   String
+  content   String   @db.Text // Tipe data untuk teks panjang
   voicePath String?
-  sequence  Int      // The order of the material within a level
+  sequence  Int     // Urutan pelajaran di dalam level
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  levelId   Int
-  level     level    @relation(fields: [levelId], references: [id])
-  exercises exercise[]
-  progress  user_progress[]
+  levelId  Int
+  level    Level    @relation(fields: [levelId], references: [id])
+  progress UserLessonProgress[]
 
-  @@unique([levelId, sequence]) // A material's sequence must be unique within its level
+  @@unique([levelId, sequence])
 }
 
-model exercise {
-  id       Int    @id @default(autoincrement())
+model Exercise {
+  id       Int     @id @default(autoincrement())
   question String
   type     String // e.g., 'MULTIPLE_CHOICE', 'SPEECH_TO_TEXT'
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  materialId Int
-  material   material @relation(fields: [materialId], references: [id])
-  choices    answer_choice[]
+  levelId  Int? // Dibuat opsional untuk Ujian Akhir
+  level    Level?   @relation(fields: [levelId], references: [id])
+  choices  AnswerChoice[]
 }
 
-model answer_choice {
+model AnswerChoice {
   id        Int     @id @default(autoincrement())
   text      String
   isCorrect Boolean
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   exerciseId Int
-  exercise   exercise @relation(fields: [exerciseId], references: [id])
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
 }
 
 // =================================
 //        USER PROGRESS
 // =================================
 
-model user_progress {
+// Tabel untuk melacak progres penyelesaian Level
+model UserLevelProgress {
   id          Int      @id @default(autoincrement())
   status      String   // e.g., 'COMPLETED', 'IN_PROGRESS'
-  score       Float?   // The score from the exercise
+  score       Float?   // Skor dari ujian level
   completedAt DateTime @default(now())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  userId     Int
-  user       user     @relation(fields: [userId], references: [id])
-  materialId Int
-  material   material @relation(fields: [materialId], references: [id])
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+  levelId Int
+  level   Level @relation(fields: [levelId], references: [id])
 
-  @@unique([userId, materialId]) // A user can only have one progress entry per material
+  @@unique([userId, levelId])
+}
+
+// Tabel BARU untuk melacak progres penyelesaian Lesson
+model UserLessonProgress {
+  id          Int      @id @default(autoincrement())
+  status      String   // e.g., 'COMPLETED', 'IN_PROGRESS'
+  completedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+  lessonId Int
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
 }
