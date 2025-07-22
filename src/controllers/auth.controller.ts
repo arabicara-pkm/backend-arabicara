@@ -24,8 +24,6 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     const validationResult = loginSchema.safeParse(req.body);
 
-    console.log(validationResult);
-    
     if (!validationResult.success) {
         return res.status(400).json({
             success: false,
