@@ -12,6 +12,10 @@ const swaggerDefinition = {
             url: `http://localhost:${process.env.PORT || 3000}/api/v1`,
             description: 'Development Server',
         },
+        {
+            url: `https://production-path/api/v1`,
+            description: 'Production Server',
+        },
     ],
     components: {
         securitySchemes: {

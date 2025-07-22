@@ -1,4 +1,3 @@
-// src/schemas/vocabulary.schema.ts
 import { z } from 'zod';
 
 export const createVocabularySchema = z.object({
