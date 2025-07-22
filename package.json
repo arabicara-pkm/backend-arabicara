@@ -16,6 +16,7 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.11.1",
+    "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.2",
@@ -29,7 +30,6 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^3.0.0",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.13",
     "@types/swagger-jsdoc": "^6.0.4",
