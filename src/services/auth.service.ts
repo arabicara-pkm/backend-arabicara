@@ -11,8 +11,9 @@ export const registerUser = async (userData: User) => {
     if (existingUser) throw new Error('Email sudah terdaftar.');
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const { id, createdAt, updatedAt, ...userDataWithoutId } = userData;
     const user = await prisma.user.create({
-        data: { ...userData, password: hashedPassword },
+        data: { ...userDataWithoutId, password: hashedPassword },
     });
 
     const { password, ...userWithoutPassword } = user;

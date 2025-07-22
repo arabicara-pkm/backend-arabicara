@@ -9,8 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -19,20 +19,21 @@ datasource db {
 // =================================
 
 model User {
-  id        String      @id @default(uuid())
-  email     String   @unique
-  username  String
-  password  String?
-  avatar    String?
-  googleId  String?  @unique
-
-  role      String   @default("student")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  username       String
+  password       String?
+  avatar         String?
+  googleId       String?  @unique @map("google_id")
+  role           String   @default("student")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relations
   levelProgress  UserLevelProgress[]
   lessonProgress UserLessonProgress[]
+
+  @@map("users")
 }
 
 // =================================
@@ -40,27 +41,31 @@ model User {
 // =================================
 
 model DictionaryCategory {
-  id   Int    @id @default(autoincrement())
-  name String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   vocabularies Vocabulary[]
+
+  @@map("dictionary_categories")
 }
 
 model Vocabulary {
-  id                  Int     @id @default(autoincrement())
-  arabicText          String
-  indonesianText      String
-  arabicVoicePath     String?
-  indonesianVoicePath String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                  Int      @id @default(autoincrement())
+  arabicText          String   @map("arabic_text")
+  indonesianText      String   @map("indonesian_text")
+  arabicVoicePath     String?  @map("arabic_voice_path")
+  indonesianVoicePath String?  @map("indonesian_voice_path")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   // Relations
-  categoryId Int
+  categoryId Int                @map("category_id")
   category   DictionaryCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("vocabularies")
 }
 
 // =================================
@@ -68,102 +73,103 @@ model Vocabulary {
 // =================================
 
 model Level {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
-  sequence    Int     @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sequence    Int      @unique
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
   lessons  Lesson[]
   exercises Exercise[]
   progress UserLevelProgress[]
+
+  @@map("levels")
 }
 
 model Lesson {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   title     String
-  content   String   @db.Text // Tipe data untuk teks panjang
-  voicePath String?
-  sequence  Int     // Urutan pelajaran di dalam level
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  content   String   @db.Text
+  voicePath String?  @map("voice_path")
+  sequence  Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  levelId  Int
+  levelId  Int    @map("level_id")
   level    Level    @relation(fields: [levelId], references: [id])
   progress UserLessonProgress[]
 
   @@unique([levelId, sequence])
+  @@map("lessons")
 }
 
 model Exercise {
-  id       Int     @id @default(autoincrement())
-  question String
-  type     String // e.g., 'MULTIPLE_CHOICE', 'SPEECH_TO_TEXT'
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  question  String
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  levelId  Int? // Dibuat opsional untuk Ujian Akhir
+  levelId  Int?     @map("level_id")
   level    Level?   @relation(fields: [levelId], references: [id])
   choices  AnswerChoice[]
+
+  @@map("exercises")
 }
 
 model AnswerChoice {
-  id        Int     @id @default(autoincrement())
-  text      String
-  isCorrect Boolean
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  text       String
+  isCorrect  Boolean  @map("is_correct")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
-  exerciseId Int
+  exerciseId Int      @map("exercise_id")
   exercise   Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@map("answer_choices")
 }
 
 // =================================
 //        USER PROGRESS
 // =================================
 
-// Tabel untuk melacak progres penyelesaian Level
 model UserLevelProgress {
   id          Int      @id @default(autoincrement())
-  status      String   // e.g., 'COMPLETED', 'IN_PROGRESS'
-  score       Float?   // Skor dari ujian level
-  completedAt DateTime @default(now())
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status      String
+  score       Float?
+  completedAt DateTime @default(now()) @map("completed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  userId String
-  user   User @relation(fields: [userId], references: [id])
-  levelId Int
-  level   Level @relation(fields: [levelId], references: [id])
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  levelId Int    @map("level_id")
+  level   Level  @relation(fields: [levelId], references: [id])
 
   @@unique([userId, levelId])
+  @@map("user_level_progresses")
 }
 
-// Tabel BARU untuk melacak progres penyelesaian Lesson
 model UserLessonProgress {
   id          Int      @id @default(autoincrement())
-  status      String   // e.g., 'COMPLETED', 'IN_PROGRESS'
-  completedAt DateTime @default(now())
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status      String
+  completedAt DateTime @default(now()) @map("completed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  userId String
-  user   User @relation(fields: [userId], references: [id])
-  lessonId Int
+  userId   String @map("user_id")
+  user     User   @relation(fields: [userId], references: [id])
+  lessonId Int    @map("lesson_id")
   lesson   Lesson @relation(fields: [lessonId], references: [id])
 
   @@unique([userId, lessonId])
+  @@map("user_lesson_progresses")
 }

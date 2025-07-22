@@ -9,7 +9,7 @@ export const createCategory = async (req: Request, res: Response) => {
     if (!name) {
       return res.status(400).json({ message: "Nama kategori wajib diisi." });
     }
-    const category = await prisma.dictionary_category.create({
+    const category = await prisma.dictionaryCategory.create({
       data: { name },
     });
     res.status(201).json(category);
@@ -20,7 +20,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await prisma.dictionary_category.findMany();
+    const categories = await prisma.dictionaryCategory.findMany();
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: "Gagal mengambil kategori.", error });

@@ -1,5 +1,5 @@
 export type User = {
-    id?: number;
+    id?: string;
     email: string;
     username: string;
     password: string; // Saat mendaftar, password wajib ada
@@ -10,7 +10,7 @@ export type User = {
 };
 
 export interface DecodedUser {
-    userId: number;
+    userId: string;
     email: string;
     role: string;
 }
