@@ -1,24 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { DecodedUser } from '../types/user.type';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret';
+const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
 
-// Middleware untuk memverifikasi token
+if (!SUPABASE_JWT_SECRET) {
+    throw new Error("SUPABASE_JWT_SECRET tidak ditemukan di file .env");
+}
+
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1]
 
     if (!token) {
         return res.status(401).json({ message: 'Akses ditolak. Token tidak disediakan.' });
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded as DecodedUser; // Simpan data user dari token ke request
+        const decoded = jwt.verify(token, SUPABASE_JWT_SECRET);
+        const userId = (decoded as any).sub;
+
+        req.user = {
+            userId: userId,
+            email: (decoded as any).email,
+            role: (decoded as any).role
+        };
+
         next();
     } catch (error) {
-        return res.status(403).json({ message: 'Token tidak valid.' });
+        return res.status(403).json({ message: 'Token tidak valid atau sudah kedaluwarsa.' });
     }
 };
 
