@@ -130,7 +130,7 @@ router.get("/:id", VocabularyController.getVocabularyHandler);
  *       400:
  *         description: Validasi gagal
  */
-router.post("/", verifyToken, isAdmin, validate(createVocabularySchema), VocabularyController.createVocabularyHandler);
+router.post("/", verifyToken, isAdmin, VocabularyController.createVocabularyHandler);
 
 /**
  * @swagger

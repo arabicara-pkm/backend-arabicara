@@ -13,8 +13,8 @@ export const createCategory = async (req: Request, res: Response) => {
       data: { name },
     });
     res.status(201).json(category);
-  } catch (error) {
-    res.status(500).json({ message: "Gagal membuat kategori.", error });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };
 

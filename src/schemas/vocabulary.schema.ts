@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createVocabularySchema = z.object({
   body: z.object({
     arabicText: z.string().min(1, 'Teks Arab wajib diisi'),
-    indonesianText: z.string().min(1, 'Teks Indonesia wajib diisi'),
+    indonesianText: z.string().nonempty("Text indon tidak boleh kosong."),
     categoryId: z.number().refine(val => typeof val === 'number', {
   message: 'Kategori wajib diisi',
 }),
