@@ -13,7 +13,7 @@ const swaggerDefinition = {
             description: 'Development Server',
         },
         {
-            url: `https://production-path/api/v1`,
+            url: `https://backend-arabicara.up.railway.app/api/v1`,
             description: 'Production Server',
         },
     ],
