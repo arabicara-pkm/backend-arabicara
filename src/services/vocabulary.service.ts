@@ -50,3 +50,11 @@ export const deleteVocabulary = async (id: string) => {
     where: { id: Number(id) },
   });
 };
+
+export const vocabularyByCategoryId = async (categoryId: string) => {
+  return await prisma.vocabulary.findMany({
+    where: {
+      categoryId: Number(categoryId),
+    },
+  });
+};
