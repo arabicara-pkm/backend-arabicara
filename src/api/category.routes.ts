@@ -65,7 +65,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/categories:
+ * /categories:
  *   post:
  *     summary: Membuat kategori baru.
  *     tags: [Category]
@@ -98,7 +98,7 @@ const router = express.Router();
 router.post("/", createCategory);
 /**
  * @swagger
- * /api/categories:
+ * /categories:
  *   get:
  *     summary: Mengambil seluruh kategori.
  *     tags: [Category]
