@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 export const getAll = async (req: Request, res: Response) => {
     try {
         const levels = await LevelService.getAllLevels();
-        res.status(200).json(levels);
+        res.status(200).json({ message: 'Levels berhasil dikirimkan', data: levels });
     } catch (error: any) {
         res.status(500).json({ message: 'Gagal mengambil data level.', error: error.message });
     }
@@ -19,7 +19,7 @@ export const getById = async (req: Request, res: Response) => {
         if (!level) {
             return res.status(404).json({ message: 'Level tidak ditemukan.' });
         }
-        res.status(200).json(level);
+        res.status(200).json({ message: 'Level berhasil ditemukan', data: level });
     } catch (error: any) {
         res.status(500).json({ message: 'Gagal mengambil data level.', error: error.message });
     }
