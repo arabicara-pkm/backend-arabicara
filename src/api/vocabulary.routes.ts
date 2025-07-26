@@ -1,11 +1,10 @@
 // src/routes/vocabulary.route.ts
 import express from "express";
 import * as VocabularyController from "../controllers/vocabulary.controller";
-import { validate } from "../middlewares/validate";
-import { createVocabularySchema, updateVocabularySchema } from "../schemas/vocabulary.schema";
-import { verifyToken, isAdmin } from "../middlewares/auth.middleware"; // middleware untuk cek apakah user admin
+import { verifyToken, isAdmin } from "../middlewares/auth.middleware";
 
 const router = express.Router();
+
 /**
  * @swagger
  * components:
@@ -31,6 +30,14 @@ const router = express.Router();
  *         indonesianVoicePath:
  *           type: string
  *           example: "/uploads/audio/indonesia_buku.mp3"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-07-26T10:00:00Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-07-26T10:30:00Z"
  *         category:
  *           type: object
  *           properties:
@@ -40,6 +47,7 @@ const router = express.Router();
  *             name:
  *               type: string
  *               example: "Kata Benda"
+ *
  *     VocabularyInput:
  *       type: object
  *       required:
@@ -64,7 +72,15 @@ const router = express.Router();
  *           example: "/uploads/audio/indonesia_buku.mp3"
  */
 
-// Public Routes
+/**
+ * @swagger
+ * tags:
+ *   - name: Vocabulary
+ *     description: API untuk manajemen data kosakata
+ */
+
+// ================= PUBLIC ROUTES ===================
+
 /**
  * @swagger
  * /vocabularies:
@@ -82,6 +98,7 @@ const router = express.Router();
  *                 $ref: '#/components/schemas/Vocabulary'
  */
 router.get("/", VocabularyController.getAllVocabulariesHandler);
+
 /**
  * @swagger
  * /vocabularies/{id}:
@@ -105,15 +122,19 @@ router.get("/", VocabularyController.getAllVocabulariesHandler);
  *       404:
  *         description: Kosakata tidak ditemukan
  */
+
+// ================= ADMIN-ONLY ROUTES ===================
+
 router.get("/:id", VocabularyController.getVocabularyHandler);
 
-// Admin-only Routes
 /**
  * @swagger
  * /vocabularies:
  *   post:
  *     summary: Menambahkan kosakata baru
  *     tags: [Vocabulary]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -129,6 +150,10 @@ router.get("/:id", VocabularyController.getVocabularyHandler);
  *               $ref: '#/components/schemas/Vocabulary'
  *       400:
  *         description: Validasi gagal
+ *       401:
+ *         description: Unauthorized - Token tidak valid
+ *       403:
+ *         description: Forbidden - Hanya admin yang dapat mengakses
  */
 router.post("/", verifyToken, isAdmin, VocabularyController.createVocabularyHandler);
 
@@ -138,6 +163,8 @@ router.post("/", verifyToken, isAdmin, VocabularyController.createVocabularyHand
  *   put:
  *     summary: Memperbarui kosakata berdasarkan ID
  *     tags: [Vocabulary]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -162,8 +189,12 @@ router.post("/", verifyToken, isAdmin, VocabularyController.createVocabularyHand
  *         description: Validasi gagal
  *       404:
  *         description: Kosakata tidak ditemukan
+ *       401:
+ *         description: Unauthorized - Token tidak valid
+ *       403:
+ *         description: Forbidden - Hanya admin yang dapat mengakses
  */
-router.put("/:id", verifyToken, isAdmin, validate(updateVocabularySchema), VocabularyController.updateVocabularyHandler);
+router.put("/:id", verifyToken, isAdmin, VocabularyController.updateVocabularyHandler);
 
 /**
  * @swagger
@@ -171,6 +202,8 @@ router.put("/:id", verifyToken, isAdmin, validate(updateVocabularySchema), Vocab
  *   delete:
  *     summary: Menghapus kosakata berdasarkan ID
  *     tags: [Vocabulary]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -183,7 +216,38 @@ router.put("/:id", verifyToken, isAdmin, validate(updateVocabularySchema), Vocab
  *         description: Kosakata berhasil dihapus.
  *       404:
  *         description: Kosakata tidak ditemukan.
+ *       401:
+ *         description: Unauthorized - Token tidak valid
+ *       403:
+ *         description: Forbidden - Hanya admin yang dapat mengakses
  */
 router.delete("/:id", verifyToken, isAdmin, VocabularyController.deleteVocabularyHandler);
-
+/**
+ * @swagger
+ * /vocabularies/category/{categoryId}:
+ *   get:
+ *     summary: Mendapatkan daftar kosakata berdasarkan ID kategori
+ *     tags: [Vocabulary]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID kategori kosakata
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil kosakata berdasarkan kategori
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Vocabulary'
+ *       404:
+ *         description: Kosakata tidak ditemukan dalam kategori tersebut
+ *       500:
+ *         description: Terjadi kesalahan pada server
+ */
+router.get("/category/:categoryId", VocabularyController.getVocabularyByCategoryIdHandler);
 export default router;
