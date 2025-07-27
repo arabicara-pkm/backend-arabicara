@@ -8,7 +8,7 @@ const router = express.Router();
 //  * @swagger
 //  * tags:
 //  *   - name: Lessons
-//  *     description: API untuk mengelola pelajaran (konten di dalam level)
+//  *     description: API untuk mengelola pelajaran (konten didalam level)
 //  */
 
 /**
