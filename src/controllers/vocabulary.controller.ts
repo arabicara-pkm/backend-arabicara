@@ -12,7 +12,7 @@ export const getAllVocabulariesHandler = async (req: Request, res: Response) => 
     res.status(500).json({ message: error.message});
   }
 };
-//error message
+
 export const getVocabularyHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -101,30 +101,6 @@ export const deleteVocabularyHandler = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Vocabulary berhasil dihapus." });
   } catch (error:any) {
     res.status(500).json({ message: error.message });
-  }
-};
-
-export const getVocabularyByCategoryIdHandler = async (req: Request, res: Response) => {
-  try {
-    const { categoryId } = req.params;
-    const vocabularies = await VocabularyService.vocabularyByCategoryId(categoryId);
-
-    if (!vocabularies || vocabularies.length === 0) {
-      return res.status(404).json({
-        status: "fail",
-        message: "Tidak ditemukan kosakata untuk kategori ini.",
-      });
-    }
-
-    return res.status(200).json({
-      status: "success",
-      data: vocabularies,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      status: "error",
-      message: error.message || "Terjadi kesalahan di server.",
-    });
   }
 };
 
