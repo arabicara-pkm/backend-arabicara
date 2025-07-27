@@ -23,9 +23,9 @@ export const getLessonById = async (id: string) => {
 export const createLesson = async (data: {
   title: string;
   content: string;
-  voicePath?: string;
   sequence: number;
   levelId: number;
+  voicePath?: string;
 }) => {
   return prisma.lesson.create({
     data,
@@ -37,9 +37,9 @@ export const updateLesson = async (
   data: Partial<{
     title: string;
     content: string;
-    voicePath?: string;
     sequence: number;
     levelId: number;
+    voicePath?: string;
   }>
 ) => {
   return prisma.lesson.update({

@@ -5,7 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
 import userRoutes from './api/user.routes';
 import vocabularyRoutes from "./api/vocabulary.routes";
-import categoryRoutes from './api/category.routes';
+import categoryRoutes from './api/dictionary_category.routes';
 import levelRoutes from './api/level.routes';
 import exerciseRoutes from './api/exercise.route';
 import lessonRoutes from "./api/lesson.routes";
