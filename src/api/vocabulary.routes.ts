@@ -220,32 +220,4 @@ router.put("/:id", verifyToken, isAdmin, VocabularyController.updateVocabularyHa
  *         description: Forbidden - Hanya admin yang dapat mengakses
  */
 router.delete("/:id", verifyToken, isAdmin, VocabularyController.deleteVocabularyHandler);
-/**
- * @swagger
- * /vocabularies/category/{categoryId}:
- *   get:
- *     summary: Mendapatkan daftar kosakata berdasarkan ID kategori
- *     tags: [Vocabulary]
- *     parameters:
- *       - in: path
- *         name: categoryId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID kategori kosakata
- *     responses:
- *       200:
- *         description: Berhasil mengambil kosakata berdasarkan kategori
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Vocabulary'
- *       404:
- *         description: Kosakata tidak ditemukan dalam kategori tersebut
- *       500:
- *         description: Terjadi kesalahan pada server
- */
-router.get("/category/:categoryId", VocabularyController.getVocabularyByCategoryIdHandler);
 export default router;
