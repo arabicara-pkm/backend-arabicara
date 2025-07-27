@@ -8,6 +8,7 @@ import vocabularyRoutes from "./api/vocabulary.routes";
 import categoryRoutes from './api/category.routes';
 import levelRoutes from './api/level.routes';
 import exerciseRoutes from './api/exercise.route';
+import lessonRoutes from "./api/lesson.routes";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/vocabularies', vocabularyRoutes);
 app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/lesson', lessonRoutes);
 app.use('/api/v1/levels', levelRoutes);
 app.use('/api/v1/exercises', exerciseRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
