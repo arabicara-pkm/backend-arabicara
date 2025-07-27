@@ -14,9 +14,13 @@ export const getAllLevels = async () => {
 };
 
 // Mendapatkan satu level berdasarkan ID
-export const getLevelById = async (id: number) => {
+export const getLevelById = async (id: number, include?: string) => {
     return await prisma.level.findUnique({
         where: { id },
+        // Gunakan 'include' dari Prisma berdasarkan query parameter
+        include: {
+            lessons: include === 'lessons' ? true : false,
+        },
     });
 };
 

@@ -21,7 +21,7 @@ app.use(express.json());
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/vocabularies', vocabularyRoutes);
 app.use('/api/v1/categories', categoryRoutes);
-app.use('/api/v1/lesson', lessonRoutes);
+app.use('/api/v1/lessons', lessonRoutes);
 app.use('/api/v1/levels', levelRoutes);
 app.use('/api/v1/exercises', exerciseRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))

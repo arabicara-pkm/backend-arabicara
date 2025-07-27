@@ -15,7 +15,9 @@ export const getAll = async (req: Request, res: Response) => {
 export const getById = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
-        const level = await LevelService.getLevelById(id);
+        const { include } = req.query as { include?: string };
+        
+        const level = await LevelService.getLevelById(id, include);
         if (!level) {
             return res.status(404).json({ message: 'Level tidak ditemukan.' });
         }

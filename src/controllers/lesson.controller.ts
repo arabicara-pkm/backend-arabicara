@@ -124,27 +124,3 @@ export const deleteLessonHandler = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-export const getLessonsByLevelIdHandler = async (req: Request, res: Response) => {
-  try {
-    const { levelId } = req.params;
-    const lessons = await LessonService.getLessonsByLevelId(levelId);
-
-    if (!lessons || lessons.length === 0) {
-      return res.status(404).json({
-        status: "fail",
-        message: "Tidak ditemukan lesson untuk level ini.",
-      });
-    }
-
-    return res.status(200).json({
-      status: "success",
-      data: lessons,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      status: "error",
-      message: error.message || "Terjadi kesalahan di server.",
-    });
-  }
-};
