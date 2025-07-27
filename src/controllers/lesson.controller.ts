@@ -76,7 +76,6 @@ export const createLessonHandler = async (req: Request, res: Response) => {
       }
     }
 
-
     return res.status(500).json({
       status: "error",
       message: error.message || "Terjadi kesalahan di server.",
@@ -116,6 +115,15 @@ export const updateLessonHandler = async (req: Request, res: Response) => {
         status: "fail",
         message: "Gagal memperbarui. Level tidak ditemukan.",
       });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return res.status(409).json({
+          success: false,
+          message: 'Nomor urutan untuk level ini sudah digunakan. Silakan gunakan nomor lain.',
+        });
+      }
     }
 
     res.status(500).json({
