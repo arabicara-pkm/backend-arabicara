@@ -42,13 +42,13 @@ export const createLessonHandler = async (req: Request, res: Response) => {
   try {
     const { title, content, sequence, level_id, voice_path } = validationResult.data;
 
-const newLesson = await LessonService.createLesson({
-  title,
-  content,
-  sequence,
-  levelId: level_id,
-  voicePath: voice_path,
-});
+    const newLesson = await LessonService.createLesson({
+      title,
+      content,
+      sequence,
+      levelId: level_id,
+      voicePath: voice_path,
+    });
     return res.status(201).json({
       status: "success",
       message: "Lesson berhasil dibuat.",
@@ -66,6 +66,16 @@ const newLesson = await LessonService.createLesson({
         message: "Level tidak ditemukan atau tidak valid.",
       });
     }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return res.status(409).json({
+          success: false,
+          message: 'Nomor urutan untuk level ini sudah digunakan. Silakan gunakan nomor lain.',
+        });
+      }
+    }
+
 
     return res.status(500).json({
       status: "error",
