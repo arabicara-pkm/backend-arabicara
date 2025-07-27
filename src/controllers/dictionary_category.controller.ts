@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import * as CategoryService from "../services/dictionary_category.service";
-
+import { prisma } from '../lib/prisma';
 
 export const createCategoryHandler = async (req: Request, res: Response) => {
   try {
@@ -50,13 +50,23 @@ export const updateCategoryHandler = async (req: Request, res: Response) => {
 };
 
 export const deleteCategoryHandler = async (req: Request, res: Response) => {
-  try {
-    const id = Number(req.params.id);
-    await CategoryService.deleteCategory(id);
+  const { id } = req.params;
 
-    res.json({ message: "Kategori berhasil dihapus" });
+  try {
+    // Hapus semua vocabulary terkait
+    await prisma.vocabulary.deleteMany({
+      where: { categoryId: parseInt(id) },
+    });
+
+    // Hapus kategori
+    await prisma.dictionaryCategory.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return res.status(200).json({ message: 'Kategori dan seluruh vocabulary di dalamnya berhasil dihapus.' });
   } catch (error) {
-    res.status(500).json({ message: "Gagal menghapus kategori", error });
+    return res.status(500).json({ message: 'Gagal menghapus.', error });
   }
 };
+
 
