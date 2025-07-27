@@ -7,13 +7,6 @@ const prisma = new PrismaClient();
 type ExerciseData = z.infer<typeof createExerciseSchema>;
 type UpdateExerciseData = z.infer<typeof updateExerciseSchema>;
 
-export const getExerciseByLevelId = async (levelId: number) => {
-    return await prisma.exercise.findMany({
-        where: { levelId },
-        include: { choices: true }
-    });
-}
-
 export const getFinalExam = async () => {
     return await prisma.exercise.findMany({
         where: { levelId: null },

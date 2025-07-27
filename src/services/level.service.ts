@@ -13,16 +13,32 @@ export const getAllLevels = async () => {
     });
 };
 
-// Mendapatkan satu level berdasarkan ID
-export const getLevelById = async (id: number, include?: string) => {
+export const getLevelById = async (id: number, includeQuery?: string) => {
+    const includeOptions: any = {};
+    const includes = includeQuery?.split(',') || [];
+
+    // Jika query meminta 'lessons'
+    if (includes.includes('lessons')) {
+        includeOptions.lessons = {
+            orderBy: { sequence: 'asc' },
+        };
+    }
+
+    // Jika query meminta 'exercises'
+    if (includes.includes('exercises')) {
+        includeOptions.exercises = {
+            include: {
+                choices: true,
+            },
+        };
+    }
+
     return await prisma.level.findUnique({
         where: { id },
-        // Gunakan 'include' dari Prisma berdasarkan query parameter
-        include: {
-            lessons: include === 'lessons' ? true : false,
-        },
+        include: includeOptions, // Gunakan objek include yang dinamis
     });
 };
+
 
 // Membuat level baru
 export const createLevel = async (data: z.infer<typeof createLevelSchema>) => {

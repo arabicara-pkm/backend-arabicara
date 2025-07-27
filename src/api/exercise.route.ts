@@ -6,43 +6,6 @@ const router = Router();
 
 /**
  * @swagger
- * /exercises/level/{levelId}:
- *   get:
- *     summary: Mendapatkan latihan untuk level tertentu
- *     tags: [Exercises]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: levelId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID dari level.
- *     responses:
- *       '200':
- *         description: Latihan untuk level ini berhasil didapat.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Exercise'
- *       '401':
- *         description: Unauthorized.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/UnauthorizedError'
- *       '404':
- *         description: Latihan tidak ditemukan.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/NotFoundError'
- */
-router.get('/level/:levelId', verifyToken, ExerciseController.getByLevelId);
-
-/**
- * @swagger
  * /exercises/final:
  *   get:
  *     summary: Mendapatkan Ujian Akhir (latihan tanpa levelId)

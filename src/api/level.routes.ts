@@ -35,7 +35,7 @@ router.get('/', verifyToken, LevelController.getAll);
  * /levels/{id}:
  *   get:
  *     summary: Mendapatkan detail satu level berdasarkan ID
- *     description: Mengambil detail untuk satu level. Secara opsional, bisa menyertakan semua lesson di dalam level tersebut dengan menggunakan query parameter `?include=lessons`.
+ *     description: "Mengambil detail untuk satu level. Bisa menyertakan data relasi seperti `lessons` dan `exercise` (lengkap dengan `choices`-nya) menggunakan query parameter `?include`. Contoh: `?include=lessons,exercises`."
  *     tags: [Levels]
  *     security:
  *       - BearerAuth: []
@@ -45,16 +45,16 @@ router.get('/', verifyToken, LevelController.getAll);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID unik dari level.
+ *         description: "ID unik dari level."
  *       - in: query
  *         name: include
  *         schema:
  *           type: string
- *           enum: [lessons]
- *         description: Sertakan data relasi. Gunakan `lessons` untuk menyertakan semua pelajaran di level ini.
+ *           enum: [lessons, exercises]
+ *         description: "Sertakan data relasi (pisahkan dengan koma). Pilihan: `lessons`, `exercises`."
  *     responses:
  *       '200':
- *         description: Detail level berhasil didapat. Respons akan berisi array `lessons` jika `?include=lessons` digunakan.
+ *         description: "Detail level berhasil didapat. Respons akan berisi array `lessons` jika `?include=lessons` digunakan."
  *         content:
  *           application/json:
  *             schema:
@@ -72,7 +72,6 @@ router.get('/', verifyToken, LevelController.getAll);
  *             schema:
  *               $ref: '#/components/schemas/NotFoundError'
  */
-
 router.get('/:id', verifyToken, LevelController.getById);
 
 /**
