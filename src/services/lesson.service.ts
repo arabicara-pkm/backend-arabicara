@@ -53,17 +53,3 @@ export const deleteLesson = async (id: string) => {
     where: { id: Number(id) },
   });
 };
-
-export const getLessonsByLevelId = async (levelId: string) => {
-  return prisma.lesson.findMany({
-    where: {
-      levelId: Number(levelId),
-    },
-    orderBy: {
-      sequence: "asc",
-    },
-    include: {
-      level: true,
-    },
-  });
-};

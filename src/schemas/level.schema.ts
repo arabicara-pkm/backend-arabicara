@@ -33,7 +33,47 @@ import { z } from 'zod';
  *           format: date-time
  *           description: Waktu level terakhir diperbarui.
  *
- *     # Definisi Input
+ *     # Skema baru untuk mendukung include
+ *     Lesson:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 101
+ *         levelId:
+ *           type: integer
+ *           example: 1
+ *         title:
+ *           type: string
+ *           example: "Sapaan Pagi"
+ *         content:
+ *           type: string
+ *           example: "Konten materi tentang sapaan pagi..."
+ *         voicePath:
+ *           type: string
+ *           nullable: true
+ *           example: "https://.../audio.mp3"
+ *         sequence:
+ *           type: integer
+ *           example: 1
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *
+ *     LevelWithLessons:
+ *       allOf:
+ *         - $ref: '#/components/schemas/Level'
+ *         - type: object
+ *           properties:
+ *             lessons:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Lesson'
+ *
+ *     # Skema Input dan Error
  *     LevelInput:
  *       type: object
  *       required:
@@ -53,7 +93,6 @@ import { z } from 'zod';
  *           description: Nomor urutan untuk menampilkan level.
  *           example: 3
  *
- *     # Definisi Respons Error yang Bisa Digunakan Kembali
  *     ErrorResponse:
  *       type: object
  *       properties:
@@ -77,7 +116,7 @@ import { z } from 'zod';
  *               type: array
  *               items:
  *                 type: string
- *               example: ["Nomor urutan harus angka positif."]
+ *                 example: ["Nomor urutan harus angka positif."]
  *
  *     UnauthorizedError:
  *       type: object
