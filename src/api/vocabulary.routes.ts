@@ -76,10 +76,8 @@ const router = express.Router();
  * @swagger
  * tags:
  *   - name: Vocabulary
- *     description: API untuk manajemen data kosakata
  */
 
-// ================= PUBLIC ROUTES ===================
 
 /**
  * @swagger

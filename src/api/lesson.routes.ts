@@ -66,7 +66,6 @@ const router = express.Router();
  * @swagger
  * tags:
  *   - name: Lesson
- *     description: API untuk manajemen pelajaran (lessons)
  */
 
 /**
