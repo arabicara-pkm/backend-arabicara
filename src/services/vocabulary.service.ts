@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
-import cloudinary from '../config/cloudinary';
-import { Readable } from 'stream';
+import { uploadAudioStream } from '../utils/media.helper';
 
 const prisma = new PrismaClient();
 const ttsClient = new TextToSpeechClient();
@@ -10,20 +9,6 @@ type VocabularyInput = {
   arabicText: string;
   indonesianText: string;
   categoryId: number;
-};
-
-// Fungsi bantuan untuk mengunggah buffer audio ke Cloudinary
-const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      { resource_type: 'video', format: 'mp3' },
-      (error, result) => {
-        if (error) return reject(error);
-        if (result) resolve(result.secure_url);
-      }
-    );
-    Readable.from(audioBuffer).pipe(uploadStream);
-  });
 };
 
 export const createVocabulary = async (data: VocabularyInput) => {

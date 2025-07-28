@@ -8,8 +8,8 @@ export const getAllVocabulariesHandler = async (req: Request, res: Response) => 
   try {
     const vocabularies = await VocabularyService.getAllVocabularies();
     res.status(200).json(vocabularies);
-  } catch (error:any) {
-    res.status(500).json({ message: error.message});
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -21,7 +21,7 @@ export const getVocabularyHandler = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Vocabulary tidak ditemukan." });
     }
     res.status(200).json(vocabulary);
-  } catch (error:any) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
@@ -45,37 +45,35 @@ export const createVocabularyHandler = async (req: Request, res: Response) => {
       data: newVocabulary,
     });
   } catch (error: any) {
-  console.error("Error creating vocabulary:", error);
+    console.error("Error creating vocabulary:", error);
 
-  // Tangani foreign key constraint error
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2003'
-  ) {
-    return res.status(400).json({
-      status: "fail",
-      message: "Kategori tidak ditemukan atau tidak valid.",
+    // Tangani foreign key constraint error
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2003'
+    ) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Kategori tidak ditemukan atau tidak valid.",
+      });
+    }
+
+    return res.status(500).json({
+      status: "error",
+      message: error.message || "Terjadi kesalahan di server.",
     });
   }
-
-  return res.status(500).json({
-    status: "error",
-    message: error.message || "Terjadi kesalahan di server.",
-  });
 }
-
-}
-
 
 export const updateVocabularyHandler = async (req: Request, res: Response) => {
-  console.log ("Update request body:", req.body);
-  console.log ("Update request params:", req.params);
+  console.log("Update request body:", req.body);
+  console.log("Update request params:", req.params);
   try {
     const { id } = req.params;
     const validationResult = updateVocabularySchema.safeParse({
-  params: req.params,
-  body: req.body
-});
+      params: req.params,
+      body: req.body
+    });
 
     if (!validationResult.success) {
       return res.status(400).json({ message: 'Validasi gagal', errors: validationResult.error.flatten().fieldErrors });
@@ -98,7 +96,7 @@ export const deleteVocabularyHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
     await VocabularyService.deleteVocabulary(id);
     res.status(200).json({ message: "Vocabulary berhasil dihapus." });
-  } catch (error:any) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
