@@ -53,9 +53,28 @@ export const updateLevel = async (id: number, data: z.infer<typeof createLevelSc
     });
 };
 
-// Menghapus level berdasarkan ID
 export const deleteLevel = async (id: number) => {
-    return await prisma.level.delete({
-        where: { id },
+    return await prisma.$transaction(async (tx) => {
+        // await tx.userLessonProgress.deleteMany({
+        //     where: { lesson: { levelId: id } },
+        // });
+
+        await tx.lesson.deleteMany({
+            where: { levelId: id },
+        });
+
+        await tx.answerChoice.deleteMany({
+            where: { exercise: { levelId: id } },
+        });
+
+        await tx.exercise.deleteMany({
+            where: { levelId: id },
+        });
+
+        const deletedLevel = await tx.level.delete({
+            where: { id },
+        });
+
+        return deletedLevel;
     });
 };

@@ -99,7 +99,7 @@ model Lesson {
 
   // Relations
   levelId  Int    @map("level_id")
-  level    Level    @relation(fields: [levelId], references: [id])
+  level    Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
   progress UserLessonProgress[]
 
   @@unique([levelId, sequence])
@@ -115,7 +115,7 @@ model Exercise {
 
   // Relations
   levelId  Int?     @map("level_id")
-  level    Level?   @relation(fields: [levelId], references: [id])
+  level    Level?   @relation(fields: [levelId], references: [id], onDelete: Cascade)
   choices  AnswerChoice[]
 
   @@map("exercises")
