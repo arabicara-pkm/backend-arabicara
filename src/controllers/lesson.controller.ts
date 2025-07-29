@@ -1,4 +1,3 @@
-// src/controllers/lesson.controller.ts
 import { Request, Response } from "express";
 import * as LessonService from "../services/lesson.service";
 import { createLessonSchema, updateLessonSchema } from "../schemas/lesson.schema";
@@ -40,14 +39,14 @@ export const createLessonHandler = async (req: Request, res: Response) => {
   }
 
   try {
-    const { title, content, sequence, level_id, voice_path } = validationResult.data;
+    const { title, content, sequence, levelId, voicePath } = validationResult.data;
 
     const newLesson = await LessonService.createLesson({
       title,
       content,
       sequence,
-      levelId: level_id,
-      voicePath: voice_path,
+      levelId: levelId,
+      voicePath: voicePath,
     });
     return res.status(201).json({
       status: "success",
@@ -85,7 +84,8 @@ export const createLessonHandler = async (req: Request, res: Response) => {
 
 export const updateLessonHandler = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { idString } = req.params;
+    const id = parseInt(idString, 10);
 
     const validationResult = updateLessonSchema.safeParse({
       params: req.params,
@@ -135,7 +135,8 @@ export const updateLessonHandler = async (req: Request, res: Response) => {
 
 export const deleteLessonHandler = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { idString } = req.params;
+    const id = parseInt(idString, 10);
     await LessonService.deleteLesson(id);
     res.status(200).json({ message: "Lesson berhasil dihapus." });
   } catch (error: any) {
