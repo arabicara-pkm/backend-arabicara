@@ -1,65 +1,18 @@
-import { PrismaClient } from '@prisma/client';
-import { TextToSpeechClient } from '@google-cloud/text-to-speech';
-import { uploadAudioStream } from '../utils/media.helper';
+import { prisma } from "../lib/prisma";
+import { textToSpeech, uploadAudioStream, deleteAudio } from "../utils/media.helper";
+import { z } from "zod";
+import { createVocabularySchema, updateVocabularySchema } from "@/schemas/vocabulary.schema";
 
-const prisma = new PrismaClient();
-const ttsClient = new TextToSpeechClient();
-
-type VocabularyInput = {
-  arabicText: string;
-  indonesianText: string;
-  categoryId: number;
-};
-
-export const createVocabulary = async (data: VocabularyInput) => {
-  const { arabicText, indonesianText, categoryId } = data;
-
-  // 1. Siapkan request untuk Google TTS
-  const arabicRequest = {
-    input: { text: arabicText },
-    voice: { languageCode: 'ar-XA', ssmlGender: 'NEUTRAL' as const },
-    audioConfig: { audioEncoding: 'MP3' as const },
-  };
-
-  const indonesianRequest = {
-    input: { text: indonesianText },
-    voice: { languageCode: 'id-ID', ssmlGender: 'NEUTRAL' as const },
-    audioConfig: { audioEncoding: 'MP3' as const },
-  };
-
-  // 2. Panggil API Google TTS secara bersamaan untuk efisiensi
-  const [arabicResponse, indonesianResponse] = await Promise.all([
-    ttsClient.synthesizeSpeech(arabicRequest),
-    ttsClient.synthesizeSpeech(indonesianRequest),
-  ]);
-
-  const arabicAudio = arabicResponse[0].audioContent as Buffer;
-  const indonesianAudio = indonesianResponse[0].audioContent as Buffer;
-
-  // 3. Unggah kedua file audio ke Cloudinary secara bersamaan
-  const [arabicUrl, indonesianUrl] = await Promise.all([
-    uploadAudioStream(arabicAudio),
-    uploadAudioStream(indonesianAudio),
-  ]);
-
-  // 4. Simpan URL dan data teks ke database
-  const newVocabulary = await prisma.vocabulary.create({
-    data: {
-      arabicText,
-      indonesianText,
-      arabicVoicePath: arabicUrl,
-      indonesianVoicePath: indonesianUrl,
-      categoryId,
-    },
-  });
-
-  return newVocabulary;
-};
+const ARABIC_LANG = 'ar-XA';
+const INDONESIAN_LANG = 'id-ID';
 
 export const getAllVocabularies = async () => {
   return prisma.vocabulary.findMany({
     include: {
       category: true,
+    },
+    orderBy: {
+      id: 'asc',
     },
   });
 };
@@ -73,25 +26,82 @@ export const getVocabularyById = async (id: string) => {
   });
 };
 
-export const updateVocabulary = async (
-  id: string,
-  data: Partial<{
-    arabicText: string;
-    indonesianText: string;
-    categoryId: number;
-    arabicVoicePath?: string;
-    indonesianVoicePath?: string;
-  }>
-) => {
-  return prisma.vocabulary.update({
-    where: { id: Number(id) },
-    data,
+export const createVocabulary = async (data: z.infer<typeof createVocabularySchema>) => {
+  const { arabicText, indonesianText, categoryId } = data;
+
+  // Proses TTS
+  const [arabicAudio, indonesianAudio] = await Promise.all([
+    textToSpeech(arabicText, ARABIC_LANG),
+    textToSpeech(indonesianText, INDONESIAN_LANG),
+  ]);
+
+  // Upload audio
+  const [arabicVoicePath, indonesianVoicePath] = await Promise.all([
+    uploadAudioStream(arabicAudio),
+    uploadAudioStream(indonesianAudio),
+  ]);
+
+  return await prisma.vocabulary.create({
+    data: {
+      arabicText,
+      indonesianText,
+      arabicVoicePath,
+      indonesianVoicePath,
+      categoryId,
+    },
   });
 };
 
-export const deleteVocabulary = async (id: string) => {
-  return prisma.vocabulary.delete({
-    where: { id: Number(id) },
+type UpdateVocabularyInput = {
+  arabicText?: string;
+  indonesianText?: string;
+  categoryId?: number;
+};
+
+export const updateVocabulary = async (
+  id: number,
+  data: UpdateVocabularyInput
+) => {
+  const existing = await prisma.vocabulary.findUnique({ where: { id } });
+  if (!existing) throw new Error("Vocabulary tidak ditemukan");
+
+  let arabicVoicePath = existing.arabicVoicePath;
+  let indonesianVoicePath = existing.indonesianVoicePath;
+
+  // Cek apakah perlu update audio Arabic
+  if (data.arabicText && data.arabicText !== existing.arabicText) {
+    if (arabicVoicePath) await deleteAudio(arabicVoicePath);
+    const audio = await textToSpeech(data.arabicText, ARABIC_LANG);
+    arabicVoicePath = await uploadAudioStream(audio);
+  }
+
+  // Cek apakah perlu update audio Indonesia
+  if (data.indonesianText && data.indonesianText !== existing.indonesianText) {
+    if (indonesianVoicePath) await deleteAudio(indonesianVoicePath);
+    const audio = await textToSpeech(data.indonesianText, INDONESIAN_LANG);
+    indonesianVoicePath = await uploadAudioStream(audio);
+  }
+
+  return await prisma.vocabulary.update({
+    where: { id },
+    data: {
+      ...data,
+      arabicVoicePath,
+      indonesianVoicePath,
+    },
+  });
+};
+
+export const deleteVocabulary = async (id: number) => {
+  const vocab = await prisma.vocabulary.findUnique({ where: { id } });
+  if (!vocab) throw new Error("Vocabulary tidak ditemukan");
+
+  // Hapus audio dari Cloudinary
+  if (vocab.arabicVoicePath) await deleteAudio(vocab.arabicVoicePath);
+  if (vocab.indonesianVoicePath) await deleteAudio(vocab.indonesianVoicePath);
+
+  return await prisma.vocabulary.delete({
+    where: { id },
   });
 };
 

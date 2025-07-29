@@ -66,8 +66,6 @@ export const createVocabularyHandler = async (req: Request, res: Response) => {
 }
 
 export const updateVocabularyHandler = async (req: Request, res: Response) => {
-  console.log("Update request body:", req.body);
-  console.log("Update request params:", req.params);
   try {
     const { id } = req.params;
     const validationResult = updateVocabularySchema.safeParse({
@@ -78,7 +76,12 @@ export const updateVocabularyHandler = async (req: Request, res: Response) => {
     if (!validationResult.success) {
       return res.status(400).json({ message: 'Validasi gagal', errors: validationResult.error.flatten().fieldErrors });
     }
-    const updatedVocabulary = await VocabularyService.updateVocabulary(id, req.body);
+    const idnumber = parseInt(id, 10);
+    const updatedVocabulary = await VocabularyService.updateVocabulary(
+  parseInt(req.params.id),
+  req.body,
+);
+
     res.status(200).json(updatedVocabulary);
   } catch (error: any) {
     if (error.code === 'P2003') {
@@ -94,7 +97,8 @@ export const updateVocabularyHandler = async (req: Request, res: Response) => {
 export const deleteVocabularyHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await VocabularyService.deleteVocabulary(id);
+    const idnumber = parseInt(id, 10);
+    await VocabularyService.deleteVocabulary(idnumber);
     res.status(200).json({ message: "Vocabulary berhasil dihapus." });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

@@ -13,8 +13,8 @@ export const updateVocabularySchema = z.object({
     id: z.string().nonempty ('ID diperlukan'),
   }),
   body: z.object({
-    arabicText: z.string().nonempty().optional(),
-    indonesianText: z.string().nonempty().optional(),
+    arabicText: z.string().optional(),
+    indonesianText: z.string().optional(),
     categoryId: z.number().optional(),
     arabicVoicePath: z.string().optional(),
     indonesianVoicePath: z.string().optional(),
