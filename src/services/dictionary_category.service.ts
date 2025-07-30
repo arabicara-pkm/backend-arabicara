@@ -13,13 +13,29 @@ export const getAllCategories = async () => {
 };
 
 export const getCategoryById = async (id: number) => {
-  return await prisma.dictionaryCategory.findUnique({
+  const data = await prisma.dictionaryCategory.findUnique({
     where: { id },
     include: {
-      vocabularies: true,
+      vocabularies: {
+        include: {
+          category: true, // tetap diambil
+        },
+      },
     },
-    
   });
+
+  if (!data) return null;
+
+  // hapus properti category di dalam vocabularies
+  const modifiedData = {
+    ...data,
+    vocabularies: data.vocabularies.map((vocab) => {
+      const { category, ...rest } = vocab;
+      return rest;
+    }),
+  };
+
+  return modifiedData;
 };
 
 export const updateCategory = async (id: number, name: string) => {
