@@ -63,7 +63,7 @@ router.get("/", CategoryController.getAllCategoriesHandler);
  * @swagger
  * /categories/{id}:
  *   get:
- *     summary: Mendapatkan kategori berdasarkan ID beserta kosakata di dalamnya
+ *     summary: Get category by ID along with associated vocabularies
  *     tags: [Category]
  *     parameters:
  *       - in: path
@@ -71,10 +71,12 @@ router.get("/", CategoryController.getAllCategoriesHandler);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID kategori
+ *         description: ID dari kategori
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Berhasil mengambil kategori beserta kosakatanya
+ *         description: Berhasil mengambil data kategori
  *         content:
  *           application/json:
  *             schema:
@@ -82,7 +84,7 @@ router.get("/", CategoryController.getAllCategoriesHandler);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Kategori berhasil diambil"
+ *                   example: Kategori berhasil diambil
  *                 data:
  *                   type: object
  *                   properties:
@@ -91,24 +93,59 @@ router.get("/", CategoryController.getAllCategoriesHandler);
  *                       example: 1
  *                     name:
  *                       type: string
- *                       example: "Kata Benda"
+ *                       example: Kata Benda
  *                     description:
  *                       type: string
- *                       example: "Kategori kosakata untuk kata benda umum dalam bahasa Arab"
+ *                       example: Kategori kosakata untuk kata benda umum dalam bahasa Arab
  *                     created_at:
  *                       type: string
  *                       format: date-time
- *                       example: "2025-07-27T13:15:37.932Z"
+ *                       example: 2025-07-27T13:15:37.932Z
  *                     updated_at:
  *                       type: string
  *                       format: date-time
- *                       example: "2025-07-27T13:15:37.932Z"
+ *                       example: 2025-07-27T13:15:37.932Z
  *                     vocabularies:
  *                       type: array
  *                       items:
- *                         $ref: '#/components/schemas/Vocabulary'
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           arabicText:
+ *                             type: string
+ *                             example: كِتَابٌ
+ *                           indonesianText:
+ *                             type: string
+ *                             example: buku
+ *                           categoryId:
+ *                             type: integer
+ *                             example: 1
+ *                           arabicVoicePath:
+ *                             type: string
+ *                             example: /uploads/audio/arabic_kitab.mp3
+ *                           indonesianVoicePath:
+ *                             type: string
+ *                             example: /uploads/audio/indonesia_buku.mp3
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: 2025-07-26T10:00:00Z
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: 2025-07-26T10:30:00Z
  *       404:
  *         description: Kategori tidak ditemukan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Kategori tidak ditemukan
  */
 router.get("/:id", CategoryController.getCategoryHandler);
 
