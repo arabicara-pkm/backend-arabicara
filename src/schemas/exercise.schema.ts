@@ -83,13 +83,13 @@ import { z } from 'zod';
  */
 
 const answerChoiceSchema = z.object({
-    text: z.string().nonempty("Teks jawaban tidak boleh kosong."),
+    text: z.string().min(1, "Teks jawaban tidak boleh kosong."),
     voicePath: z.string().optional(),
     isCorrect: z.boolean(),
 });
 
 export const createExerciseSchema = z.object({
-    question: z.string().nonempty("Pertanyaan tidak boleh kosong."),
+    question: z.string().min(1, "Pertanyaan tidak boleh kosong."),
     type: z.string().default('MULTIPLE_CHOICE'),
     levelId: z.number().int().positive().optional().nullable(),
     choices: z.array(answerChoiceSchema)

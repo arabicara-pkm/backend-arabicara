@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const createLessonSchema = z.object({
-  title: z.string().nonempty('Judul pelajaran wajib diisi'),
-  content: z.string().nonempty('Konten pelajaran wajib diisi'),
+  title: z.string().min(1, 'Judul pelajaran wajib diisi'),
+  content: z.string().min(1, 'Konten pelajaran wajib diisi'),
   sequence: z.number().int('Nomor urutan harus berupa bilangan bulat.').min(1, 'Nomor urutan harus angka positif.'),
   levelId: z.number().int('ID level harus berupa bilangan bulat.').min(1, 'ID level wajib diisi'),
   voicePath: z.string().optional(),
