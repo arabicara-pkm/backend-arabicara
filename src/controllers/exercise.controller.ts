@@ -1,7 +1,30 @@
 import { Request, Response } from "express";
-import { createExercise, deleteExercise, getFinalExam, updateExercise } from "../services/exercise.service";
+import { createExercise, deleteExercise, getFinalExam, updateExercise, submitLevelAnswers } from "../services/exercise.service";
 import { createExerciseSchema, updateExerciseSchema } from "../schemas/exercise.schema";
 import { Prisma } from "@prisma/client";
+import { submitLevelExerciseSchema } from '../schemas/submission.schema';
+
+export const submitForLevel = async (req: Request, res: Response) => {
+    const levelId = parseInt(req.params.levelId);
+    const userId = req.user?.userId;
+
+    if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const validationResult = submitLevelExerciseSchema.safeParse(req.body);
+    if (!validationResult.success) {
+        return res.status(400).json({ message: 'Validasi gagal', errors: validationResult.error.flatten().fieldErrors });
+    }
+
+    try {
+        const result = await submitLevelAnswers(userId, levelId, validationResult.data);
+        res.status(200).json({ message: 'Jawaban untuk level berhasil disubmit', data: result });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Gagal memproses jawaban.', error: error.message });
+    }
+};
+
 
 export const getFinal = async (req: Request, res: Response) => {
     try {

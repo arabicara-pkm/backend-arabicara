@@ -1,8 +1,76 @@
 import { Router } from 'express';
 import * as LevelController from '../controllers/level.controller';
 import { verifyToken, isAdmin } from '../middlewares/auth.middleware';
+import { submitForLevel } from '../controllers/exercise.controller';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /levels/{levelId}/submit:
+ *   post:
+ *     summary: Mengirimkan semua jawaban untuk ujian di satu level
+ *     description: Pengguna mengirimkan semua jawaban untuk semua soal di level ini. API akan menghitung skor total dan menyelesaikan progres level.
+ *     tags: [Levels]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: levelId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID dari level yang ujiannya dikerjakan.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               submissions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     exerciseId:
+ *                       type: integer
+ *                     answerIds:
+ *                       type: array
+ *                       items:
+ *                         type: integer
+ *             example:
+ *               submissions:
+ *                 - exerciseId: 1
+ *                   answerIds: [101]
+ *                 - exerciseId: 2
+ *                   answerIds: [104, 105]
+ *     responses:
+ *       '200':
+ *         description: Jawaban berhasil diproses.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     score:
+ *                       type: integer
+ *                       example: 80
+ *                     totalQuestions:
+ *                       type: integer
+ *                       example: 10
+ *                     correctlyAnsweredQuestions:
+ *                       type: integer
+ *                       example: 8
+ *       '400':
+ *         description: Validasi gagal.
+ */
+router.post('/:levelId/submit', verifyToken, submitForLevel);
 
 /**
  * @swagger
