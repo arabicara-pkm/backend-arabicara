@@ -12,6 +12,87 @@ type LevelSubmissionData = z.infer<typeof submitLevelExerciseSchema>;
 
 const AUDIO_LANGUAGE = 'ar-XA';
 
+const areChoicesDifferent = (newChoices: any[], oldChoices: any[]): boolean => {
+    if (newChoices.length !== oldChoices.length) return true;
+
+    // Buat map dari pilihan jawaban lama untuk perbandingan yang mudah
+    const oldChoicesMap = new Map(oldChoices.map(c => [c.text, c.isCorrect]));
+
+    for (const newChoice of newChoices) {
+        if (!oldChoicesMap.has(newChoice.text) || oldChoicesMap.get(newChoice.text) !== newChoice.isCorrect) {
+            return true; // Ditemukan perbedaan
+        }
+    }
+
+    return false; // Tidak ada perbedaan
+};
+
+
+export const updateExercise = async (id: number, data: UpdateExerciseData) => {
+    const { choices, question, ...exerciseData } = data;
+
+    const existingExercise = await prisma.exercise.findUnique({
+        where: { id },
+        include: { choices: true },
+    });
+
+    if (!existingExercise) {
+        throw new Error("Latihan tidak ditemukan");
+    }
+
+    let newQuestionVoicePath = existingExercise.voicePath;
+    let newChoicesWithAudioData: any[] | undefined = undefined;
+
+    // Jika pertanyaan diubah, siapkan audio baru
+    if (question && question !== existingExercise.question) {
+        console.log("Pertanyaan berubah, menyiapkan audio baru...");
+        if (existingExercise.voicePath) await deleteAudio(existingExercise.voicePath);
+        const questionAudioBuffer = await textToSpeech(question, AUDIO_LANGUAGE);
+        newQuestionVoicePath = await uploadAudioStream(questionAudioBuffer);
+    }
+
+    // Hanya proses jika 'choices' dikirim DAN isinya benar-benar berbeda
+    if (choices && areChoicesDifferent(choices, existingExercise.choices)) {
+        console.log("Pilihan jawaban terdeteksi berbeda, menyiapkan audio baru...");
+
+        await Promise.all(
+            existingExercise.choices.map(choice =>
+                choice.voicePath ? deleteAudio(choice.voicePath) : Promise.resolve()
+            )
+        );
+
+        newChoicesWithAudioData = await Promise.all(
+            choices.map(async (choice) => {
+                const choiceAudioBuffer = await textToSpeech(choice.text, AUDIO_LANGUAGE);
+                const voicePath = await uploadAudioStream(choiceAudioBuffer);
+                return { ...choice, voicePath, exerciseId: id };
+            })
+        );
+    }
+
+    return await prisma.$transaction(async (tx) => {
+        await tx.exercise.update({
+            where: { id },
+            data: {
+                ...exerciseData,
+                ...(question && { question }),
+                voicePath: newQuestionVoicePath,
+            },
+        });
+
+        if (newChoicesWithAudioData) {
+            await tx.answerChoice.deleteMany({ where: { exerciseId: id } });
+            await tx.answerChoice.createMany({ data: newChoicesWithAudioData });
+        }
+
+        return await tx.exercise.findUnique({
+            where: { id },
+            include: { choices: true },
+        });
+    });
+}
+
+
 export const getFinalExam = async () => {
     return await prisma.exercise.findMany({
         where: { levelId: null },
@@ -54,77 +135,6 @@ export const createExercise = async (data: ExerciseData) => {
         return { ...exercise, choices: choicesWithAudio };
     });
 
-}
-
-export const updateExercise = async (id: number, data: UpdateExerciseData) => {
-    const { choices, question, ...exerciseData } = data;
-
-    // Ambil data exercise lama untuk perbandingan dan penghapusan file
-    const existingExercise = await prisma.exercise.findUnique({
-        where: { id },
-        include: { choices: true },
-    });
-
-    if (!existingExercise) {
-        throw new Error("Latihan tidak ditemukan");
-    }
-
-    let newQuestionVoicePath = existingExercise.voicePath;
-    let newChoicesWithAudioData: any[] | undefined = undefined;
-
-    // Jika pertanyaan diubah, siapkan audio baru
-    if (question && question !== existingExercise.question) {
-        console.log("Pertanyaan berubah, menyiapkan audio baru...");
-        if (existingExercise.voicePath) await deleteAudio(existingExercise.voicePath);
-        const questionAudioBuffer = await textToSpeech(question, AUDIO_LANGUAGE);
-        newQuestionVoicePath = await uploadAudioStream(questionAudioBuffer);
-    }
-
-    // Jika pilihan jawaban diubah, siapkan audio baru
-    if (choices && choices.length > 0) {
-        console.log("Pilihan jawaban berubah, menyiapkan audio baru...");
-        // Hapus semua file audio dari pilihan jawaban lama
-        await Promise.all(
-            existingExercise.choices.map(choice =>
-                choice.voicePath ? deleteAudio(choice.voicePath) : Promise.resolve()
-            )
-        );
-
-        // Buat audio dan data baru untuk pilihan jawaban
-        newChoicesWithAudioData = await Promise.all(
-            choices.map(async (choice) => {
-                const choiceAudioBuffer = await textToSpeech(choice.text, AUDIO_LANGUAGE);
-                const voicePath = await uploadAudioStream(choiceAudioBuffer);
-                return { ...choice, voicePath, exerciseId: id };
-            })
-        );
-    }
-
-    return await prisma.$transaction(async (tx) => {
-        // Update exercise utama dengan data yang sudah disiapkan
-        await tx.exercise.update({
-            where: { id },
-            data: {
-                ...exerciseData,
-                ...(question && { question }),
-                voicePath: newQuestionVoicePath,
-            },
-        });
-
-        // Jika ada data pilihan jawaban baru, perbarui di database
-        if (newChoicesWithAudioData) {
-            // Hapus record pilihan jawaban lama dari database
-            await tx.answerChoice.deleteMany({ where: { exerciseId: id } });
-            // Buat record pilihan jawaban yang baru
-            await tx.answerChoice.createMany({ data: newChoicesWithAudioData });
-        }
-
-        // Ambil dan kembalikan data exercise yang sudah lengkap dan terbaru
-        return await tx.exercise.findUnique({
-            where: { id },
-            include: { choices: true },
-        });
-    });
 }
 
 export const deleteExercise = async (id: number) => {
