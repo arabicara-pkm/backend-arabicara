@@ -1,4 +1,4 @@
-import { deleteAudio, textToSpeech, uploadAudioStream } from "@/utils/media.helper";
+import { deleteAudio, textToSpeech, uploadAudioStream } from "../utils/media.helper";
 import { createExerciseSchema, updateExerciseSchema } from "../schemas/exercise.schema";
 import { PrismaClient } from "@prisma/client";
 import z from "zod";
