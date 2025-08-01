@@ -84,6 +84,7 @@ import { z } from 'zod';
 
 const answerChoiceSchema = z.object({
     text: z.string().nonempty("Teks jawaban tidak boleh kosong."),
+    voicePath: z.string().optional(),
     isCorrect: z.boolean(),
 });
 

@@ -110,6 +110,7 @@ model Exercise {
   id        Int      @id @default(autoincrement())
   question  String
   type      String
+  voicePath String?  @map("voice_path")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -125,12 +126,13 @@ model AnswerChoice {
   id         Int      @id @default(autoincrement())
   text       String
   isCorrect  Boolean  @map("is_correct")
+  voicePath  String?  @map("voice_path")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
   exerciseId Int      @map("exercise_id")
-  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
 
   @@map("answer_choices")
 }
@@ -149,9 +151,9 @@ model UserLevelProgress {
 
   // Relations
   userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   levelId Int    @map("level_id")
-  level   Level  @relation(fields: [levelId], references: [id])
+  level   Level  @relation(fields: [levelId], references: [id], onDelete: Cascade)
 
   @@unique([userId, levelId])
   @@map("user_level_progresses")
@@ -166,9 +168,9 @@ model UserLessonProgress {
 
   // Relations
   userId   String @map("user_id")
-  user     User   @relation(fields: [userId], references: [id])
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessonId Int    @map("lesson_id")
-  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
   @@map("user_lesson_progresses")

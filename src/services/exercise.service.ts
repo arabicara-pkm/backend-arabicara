@@ -1,3 +1,4 @@
+import { deleteAudio, textToSpeech, uploadAudioStream } from "@/utils/media.helper";
 import { createExerciseSchema, updateExerciseSchema } from "../schemas/exercise.schema";
 import { PrismaClient } from "@prisma/client";
 import z from "zod";
@@ -7,6 +8,8 @@ const prisma = new PrismaClient();
 type ExerciseData = z.infer<typeof createExerciseSchema>;
 type UpdateExerciseData = z.infer<typeof updateExerciseSchema>;
 
+const AUDIO_LANGUAGE = 'ar-XA';
+
 export const getFinalExam = async () => {
     return await prisma.exercise.findMany({
         where: { levelId: null },
@@ -15,60 +18,92 @@ export const getFinalExam = async () => {
 }
 
 export const createExercise = async (data: ExerciseData) => {
-    const { choices, ...exerciseData } = data;
+    const { choices, question, ...exerciseData } = data;
+
+    const questionAudioBuffer = await textToSpeech(question, AUDIO_LANGUAGE);
+    const questionVoicePath = await uploadAudioStream(questionAudioBuffer);
+
+    const choicesWithAudio = await Promise.all(
+        choices.map(async (choice) => {
+            const choiceAudioBuffer = await textToSpeech(choice.text, AUDIO_LANGUAGE);
+            const voicePath = await uploadAudioStream(choiceAudioBuffer);
+            return { ...choice, voicePath };
+        })
+    );
 
     return await prisma.$transaction(async (tx) => {
-        // 1. Buat exercise utama
         const exercise = await tx.exercise.create({
-            data: exerciseData,
+            data: {
+                ...exerciseData,
+                question,
+                voicePath: questionVoicePath,
+            },
         });
 
-        // 2. Siapkan data pilihan jawaban dengan ID exercise yang baru
-        const choicesData = choices.map(choice => ({
+        const choicesData = choicesWithAudio.map(choice => ({
             ...choice,
             exerciseId: exercise.id,
         }));
 
-        // 3. Buat semua pilihan jawaban
         await tx.answerChoice.createMany({
             data: choicesData,
         });
 
-        // Kembalikan exercise beserta pilihan jawabannya
-        return { ...exercise, choices };
-    })
+        return { ...exercise, choices: choicesWithAudio };
+    });
+
 }
 
 export const updateExercise = async (id: number, data: UpdateExerciseData) => {
-    const { choices, ...exerciseData } = data;
+    const { choices, question, ...exerciseData } = data;
 
     return await prisma.$transaction(async (tx) => {
-        // 1. Update data exercise utama
-        const updatedExercise = await tx.exercise.update({
+        const existingExercise = await tx.exercise.findUnique({
             where: { id },
-            data: exerciseData,
+            include: { choices: true },
         });
 
-        // 2. Jika ada data 'choices' baru, hapus yang lama dan buat yang baru
-        if (choices && choices.length > 0) {
-            // Hapus semua pilihan jawaban yang lama
-            await tx.answerChoice.deleteMany({
-                where: { exerciseId: id },
-            });
-
-            // Siapkan data pilihan jawaban baru
-            const newChoicesData = choices.map(choice => ({
-                ...choice,
-                exerciseId: id,
-            }));
-
-            // Buat semua pilihan jawaban yang baru
-            await tx.answerChoice.createMany({
-                data: newChoicesData
-            });
+        if (!existingExercise) {
+            throw new Error("Latihan tidak ditemukan");
         }
 
-        // Ambil data terbaru untuk dikembalikan
+        let newQuestionVoicePath = existingExercise.voicePath;
+
+        // Jika pertanyaan diubah, buat ulang audionya
+        if (question && question !== existingExercise.question) {
+            if (existingExercise.voicePath) await deleteAudio(existingExercise.voicePath);
+            const questionAudioBuffer = await textToSpeech(question, AUDIO_LANGUAGE);
+            newQuestionVoicePath = await uploadAudioStream(questionAudioBuffer);
+        }
+
+        const updatedExercise = await tx.exercise.update({
+            where: { id },
+            data: {
+                ...exerciseData,
+                ...(question && { question }),
+                voicePath: newQuestionVoicePath,
+            },
+        });
+
+        if (choices && choices.length > 0) {
+            await Promise.all(
+                existingExercise.choices.map(choice =>
+                    choice.voicePath ? deleteAudio(choice.voicePath) : Promise.resolve()
+                )
+            );
+            await tx.answerChoice.deleteMany({ where: { exerciseId: id } });
+
+            const newChoicesWithAudio = await Promise.all(
+                choices.map(async (choice) => {
+                    const choiceAudioBuffer = await textToSpeech(choice.text, AUDIO_LANGUAGE);
+                    const voicePath = await uploadAudioStream(choiceAudioBuffer);
+                    return { ...choice, voicePath, exerciseId: id };
+                })
+            );
+
+            await tx.answerChoice.createMany({ data: newChoicesWithAudio });
+        }
+
         return await tx.exercise.findUnique({
             where: { id },
             include: { choices: true },
@@ -78,12 +113,21 @@ export const updateExercise = async (id: number, data: UpdateExerciseData) => {
 
 export const deleteExercise = async (id: number) => {
     return await prisma.$transaction(async (tx) => {
-        // Hapus pilihan jawaban terlebih dahulu untuk menghindari error constraint
-        await tx.answerChoice.deleteMany({
-            where: { exerciseId: id },
+        const exerciseToDelete = await tx.exercise.findUnique({
+            where: { id },
+            include: { choices: true },
         });
 
-        // Hapus exercise utama
+        if (exerciseToDelete) {
+            const urlsToDelete: string[] = [];
+            if (exerciseToDelete.voicePath) urlsToDelete.push(exerciseToDelete.voicePath);
+            exerciseToDelete.choices.forEach(choice => {
+                if (choice.voicePath) urlsToDelete.push(choice.voicePath);
+            });
+
+            await Promise.all(urlsToDelete.map(url => deleteAudio(url)));
+        }
+
         return await tx.exercise.delete({
             where: { id },
         });
