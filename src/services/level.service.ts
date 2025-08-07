@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { createLevelSchema } from '../schemas/level.schema';
+import { createLevelSchema, updateLevelSchema } from '../schemas/level.schema';
 
 const prisma = new PrismaClient();
 
@@ -17,14 +17,12 @@ export const getLevelById = async (id: number, includeQuery?: string) => {
     const includeOptions: any = {};
     const includes = includeQuery?.split(',') || [];
 
-    // Jika query meminta 'lessons'
     if (includes.includes('lessons')) {
         includeOptions.lessons = {
             orderBy: { sequence: 'asc' },
         };
     }
 
-    // Jika query meminta 'exercises'
     if (includes.includes('exercises')) {
         includeOptions.exercises = {
             include: {
@@ -35,10 +33,9 @@ export const getLevelById = async (id: number, includeQuery?: string) => {
 
     return await prisma.level.findUnique({
         where: { id },
-        include: includeOptions, // Gunakan objek include yang dinamis
+        include: includeOptions,
     });
 };
-
 
 // Membuat level baru
 export const createLevel = async (data: z.infer<typeof createLevelSchema>) => {
@@ -55,24 +52,31 @@ export const updateLevel = async (id: number, data: z.infer<typeof createLevelSc
 
 export const deleteLevel = async (id: number) => {
     return await prisma.$transaction(async (tx) => {
-        // await tx.userLessonProgress.deleteMany({
-        //     where: { lesson: { levelId: id } },
-        // });
-
-        await tx.lesson.deleteMany({
-            where: { levelId: id },
+        const levelToDelete = await tx.level.findUnique({
+            where: { id },
         });
 
-        await tx.answerChoice.deleteMany({
-            where: { exercise: { levelId: id } },
-        });
+        if (!levelToDelete) {
+            throw new Error("Level tidak ditemukan");
+        }
 
-        await tx.exercise.deleteMany({
-            where: { levelId: id },
-        });
+        const deletedSequence = levelToDelete.sequence;
 
         const deletedLevel = await tx.level.delete({
             where: { id },
+        });
+
+        await tx.level.updateMany({
+            where: {
+                sequence: {
+                    gt: deletedSequence, // gt = greater than
+                },
+            },
+            data: {
+                sequence: {
+                    decrement: 1, // Kurangi sequence-nya dengan 1
+                },
+            },
         });
 
         return deletedLevel;

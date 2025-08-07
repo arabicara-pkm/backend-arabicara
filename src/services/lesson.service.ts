@@ -1,7 +1,9 @@
+import { PrismaClient } from "@prisma/client";
 import z from "zod";
-import { prisma } from "../lib/prisma";
-import { createLessonSchema, updateLessonSchema } from "@/schemas/lesson.schema";
+import { createLessonSchema, updateLessonSchema } from "../schemas/lesson.schema";
 import { deleteAudio, textToSpeech, uploadAudioStream } from "../utils/media.helper";
+
+const prisma = new PrismaClient();
 
 const AUDIO_LANGUAGE = 'ar-XA';
 
@@ -16,9 +18,9 @@ export const getAllLessons = async () => {
   });
 };
 
-export const getLessonById = async (id: string) => {
+export const getLessonById = async (id: number) => {
   return prisma.lesson.findUnique({
-    where: { id: Number(id) },
+    where: { id },
     include: {
       level: true,
     },
@@ -33,11 +35,11 @@ export const createLesson = async (data: z.infer<typeof createLessonSchema>) => 
 
   return await prisma.lesson.create({
     data: {
-      ...lessonData, // title, content, sequence
+      ...lessonData,
       voicePath,
       level: {
         connect: {
-          id: levelId, // Hubungkan ke level yang ada
+          id: levelId,
         },
       },
     },
@@ -49,7 +51,7 @@ export const updateLesson = async (id: number, data: z.infer<typeof updateLesson
 
   const existingLesson = await prisma.lesson.findUnique({ where: { id } });
   if (!existingLesson) {
-    throw new Error('Lesson tidak ditemukan'); // Akan ditangani sebagai 404 di controller
+    throw new Error('Lesson tidak ditemukan');
   }
 
   let newVoicePath = existingLesson.voicePath;
@@ -62,7 +64,6 @@ export const updateLesson = async (id: number, data: z.infer<typeof updateLesson
     newVoicePath = await uploadAudioStream(audioBuffer);
   }
 
-  // Update data di database
   return await prisma.lesson.update({
     where: { id },
     data: {
@@ -80,11 +81,39 @@ export const updateLesson = async (id: number, data: z.infer<typeof updateLesson
 };
 
 export const deleteLesson = async (id: number) => {
-  const lessonToDelete = await prisma.lesson.findUnique({ where: { id } });
+  return await prisma.$transaction(async (tx) => {
+    const lessonToDelete = await tx.lesson.findUnique({
+      where: { id },
+    });
 
-  if (lessonToDelete?.voicePath) {
-    await deleteAudio(lessonToDelete.voicePath);
-  }
+    if (!lessonToDelete) {
+      throw new Error("Lesson tidak ditemukan");
+    }
 
-  return await prisma.lesson.delete({ where: { id } });
+    const { sequence: deletedSequence, levelId: parentLevelId } = lessonToDelete;
+
+    if (lessonToDelete.voicePath) {
+      await deleteAudio(lessonToDelete.voicePath);
+    }
+
+    const deletedLesson = await tx.lesson.delete({
+      where: { id },
+    });
+
+    await tx.lesson.updateMany({
+      where: {
+        levelId: parentLevelId,
+        sequence: {
+          gt: deletedSequence, // gt = greater than
+        },
+      },
+      data: {
+        sequence: {
+          decrement: 1, // Kurangi sequence-nya dengan 1
+        },
+      },
+    });
+
+    return deletedLesson;
+  });
 };

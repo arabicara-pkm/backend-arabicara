@@ -14,7 +14,7 @@ export const getAllLessonsHandler = async (req: Request, res: Response) => {
 
 export const getLessonHandler = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
     const lesson = await LessonService.getLessonById(id);
 
     if (!lesson) {
@@ -139,6 +139,12 @@ export const deleteLessonHandler = async (req: Request, res: Response) => {
     await LessonService.deleteLesson(id);
     res.status(200).json({ message: "Lesson berhasil dihapus." });
   } catch (error: any) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025' || error.message === "Lesson tidak ditemukan") {
+      return res.status(404).json({
+        success: false,
+        message: 'Gagal menghapus. Lesson tidak ditemukan.'
+      });
+    }
     res.status(500).json({ message: error.message });
   }
 };
