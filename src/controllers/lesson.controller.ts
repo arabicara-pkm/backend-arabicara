@@ -84,8 +84,7 @@ export const createLessonHandler = async (req: Request, res: Response) => {
 
 export const updateLessonHandler = async (req: Request, res: Response) => {
   try {
-    const { idString } = req.params;
-    const id = parseInt(idString, 10);
+    const id = parseInt(req.params.id, 10);
 
     const validationResult = updateLessonSchema.safeParse({
       params: req.params,
@@ -135,8 +134,8 @@ export const updateLessonHandler = async (req: Request, res: Response) => {
 
 export const deleteLessonHandler = async (req: Request, res: Response) => {
   try {
-    const { idString } = req.params;
-    const id = parseInt(idString, 10);
+    const id = parseInt(req.params.id, 10);
+
     await LessonService.deleteLesson(id);
     res.status(200).json({ message: "Lesson berhasil dihapus." });
   } catch (error: any) {
