@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "email" DROP NOT NULL,
+ALTER COLUMN "created_at" DROP NOT NULL,
+ALTER COLUMN "updated_at" DROP NOT NULL;

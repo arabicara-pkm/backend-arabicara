@@ -58,26 +58,6 @@ import { z } from 'zod';
  *           example: https://example.com/avatar.png
  */
 
-
-// Skema untuk registrasi user baru
-export const registerSchema = z.object({
-    username: z.string()
-        .min(1, "Username tidak boleh kosong.")
-        .min(3, "Username minimal harus 3 karakter."),
-
-    email: z.string().email().min(1, "Email tidak boleh kosong."),
-
-    password: z.string()
-        .min(1, "Password tidak boleh kosong.")
-        .min(6, "Password minimal harus 6 karakter."),
-});
-
-// Skema untuk login
-export const loginSchema = z.object({
-    email: z.string().email("Email tidak valid.").min(1, "Email tidak boleh kosong."),
-    password: z.string().min(1, "Password tidak boleh kosong."),
-});
-
 // Skema untuk update user
 export const updateUserSchema = z.object({
     username: z.string().min(3, "Username minimal harus 3 karakter.").optional(),
