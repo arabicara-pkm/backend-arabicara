@@ -9,11 +9,13 @@ export const submitForLevel = async (req: Request, res: Response) => {
     const userId = req.user?.userId;
 
     if (!userId) {
+        console.error('Unauthorized access attempt');
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const validationResult = submitLevelExerciseSchema.safeParse(req.body);
     if (!validationResult.success) {
+        console.error('Validation failed:', validationResult.error);
         return res.status(400).json({ message: 'Validasi gagal', errors: validationResult.error.flatten().fieldErrors });
     }
 
@@ -21,10 +23,10 @@ export const submitForLevel = async (req: Request, res: Response) => {
         const result = await submitLevelAnswers(userId, levelId, validationResult.data);
         res.status(200).json({ message: 'Jawaban untuk level berhasil disubmit', data: result });
     } catch (error: any) {
+        console.error('Error in submitForLevel:', error);
         res.status(500).json({ message: 'Gagal memproses jawaban.', error: error.message });
     }
 };
-
 
 export const getFinal = async (req: Request, res: Response) => {
     try {

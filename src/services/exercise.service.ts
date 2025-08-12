@@ -161,76 +161,81 @@ export const deleteExercise = async (id: number) => {
 };
 
 export const submitLevelAnswers = async (userId: string, levelId: number, data: LevelSubmissionData) => {
-    const { submissions } = data;
+    try {
+        const { submissions } = data;
 
-    const exercisesInLevel = await prisma.exercise.findMany({
-        where: { levelId },
-        include: {
-            choices: {
-                where: { isCorrect: true },
+        const exercisesInLevel = await prisma.exercise.findMany({
+            where: { levelId },
+            include: {
+                choices: {
+                    where: { isCorrect: true },
+                },
             },
-        },
-    });
+        });
 
-    if (exercisesInLevel.length === 0) {
-        throw new Error("Tidak ada latihan yang ditemukan untuk level ini.");
-    }
+        if (exercisesInLevel.length === 0) {
+            throw new Error("Tidak ada latihan yang ditemukan untuk level ini.");
+        }
 
-    // Buat "peta" jawaban benar untuk pengecekan yang cepat
-    const correctAnswersMap = new Map<number, Set<number>>();
-    exercisesInLevel.forEach(exercise => {
-        const correctIds = new Set(exercise.choices.map(choice => choice.id));
-        correctAnswersMap.set(exercise.id, correctIds);
-    });
+        // Buat "peta" jawaban benar untuk pengecekan yang cepat
+        const correctAnswersMap = new Map<number, Set<number>>();
+        exercisesInLevel.forEach(exercise => {
+            const correctIds = new Set(exercise.choices.map(choice => choice.id));
+            correctAnswersMap.set(exercise.id, correctIds);
+        });
 
-    // Hitung berapa banyak soal yang dijawab dengan benar
-    let correctlyAnsweredQuestions = 0;
-    submissions.forEach(submission => {
-        const correctIds = correctAnswersMap.get(submission.exerciseId);
-        const submittedIds = new Set(submission.answerIds);
+        // Hitung berapa banyak soal yang dijawab dengan benar
+        let correctlyAnsweredQuestions = 0;
+        submissions.forEach(submission => {
+            const correctIds = correctAnswersMap.get(submission.exerciseId);
+            const submittedIds = new Set(submission.answerIds);
 
-        // Jawaban dianggap benar jika set jawaban yang dikirim sama persis dengan set jawaban yang benar
-        if (correctIds && submittedIds.size === correctIds.size) {
-            let allMatch = true;
-            for (const id of submittedIds) {
-                if (!correctIds.has(id)) {
-                    allMatch = false;
-                    break;
+            // Jawaban dianggap benar jika set jawaban yang dikirim sama persis dengan set jawaban yang benar
+            if (correctIds && submittedIds.size === correctIds.size) {
+                let allMatch = true;
+                for (const id of submittedIds) {
+                    if (!correctIds.has(id)) {
+                        allMatch = false;
+                        break;
+                    }
+                }
+                if (allMatch) {
+                    correctlyAnsweredQuestions++;
                 }
             }
-            if (allMatch) {
-                correctlyAnsweredQuestions++;
-            }
-        }
-    });
+        });
 
-    // Hitung skor akhir
-    const totalQuestions = exercisesInLevel.length;
-    const score = (correctlyAnsweredQuestions / totalQuestions) * 100;
+        // Hitung skor akhir
+        const totalQuestions = exercisesInLevel.length;
+        const score = (correctlyAnsweredQuestions / totalQuestions) * 100;
 
-    // Simpan atau perbarui progres pengguna untuk level ini
-    await prisma.userLevelProgress.upsert({
-        where: {
-            userId_levelId: { userId, levelId },
-        },
-        update: {
-            score,
-            status: 'completed',
-            completedAt: new Date(),
-        },
-        create: {
-            userId,
-            levelId,
-            score,
-            status: 'completed',
-            completedAt: new Date(),
-        },
-    });
+        // Simpan atau perbarui progres pengguna untuk level ini
+        await prisma.userLevelProgress.upsert({
+            where: {
+                userId_levelId: { userId, levelId },
+            },
+            update: {
+                score,
+                status: 'completed',
+                completedAt: new Date(),
+            },
+            create: {
+                userId,
+                levelId,
+                score,
+                status: 'completed',
+                completedAt: new Date(),
+            },
+        });
 
-    // Kembalikan hasil akhir
-    return {
-        score: Math.round(score),
-        totalQuestions,
-        correctlyAnsweredQuestions,
-    };
+        return {
+            score: Math.round(score),
+            totalQuestions,
+            correctlyAnsweredQuestions,
+        };
+    } catch (err) {
+        console.error('🔥 Error in submitLevelAnswers:', err);
+        throw err;
+    }
 };
+
