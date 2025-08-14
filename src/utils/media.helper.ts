@@ -51,10 +51,15 @@ export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
  */
 export const synthesizeLongAudio = async (text: string, outputFileName: string): Promise<string> => {
     const inputFile = `${outputFileName}.txt`;
-    const outputFile = `${outputFileName}.wav`; 
+    const outputFile = `${outputFileName}.wav`;
 
-    // Unggah file teks ke GCS
-    await storage.bucket(bucketName).file(inputFile).save(text);
+    // Unggah file teks ke GCS dengan encoding UTF-8
+    const file = storage.bucket(bucketName).file(inputFile);
+    await file.save(text, {
+        metadata: {
+            contentType: 'text/plain; charset=utf-8',
+        },
+    });
 
     // Siapkan request untuk Long Audio API
     const request = {
