@@ -51,7 +51,7 @@ export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
  */
 export const synthesizeLongAudio = async (text: string, outputFileName: string): Promise<string> => {
     const inputFile = `${outputFileName}.txt`;
-    const outputFile = `${outputFileName}.mp3`;
+    const outputFile = `${outputFileName}.wav`; // <-- UBAH KE .wav
 
     // 1. Unggah file teks ke GCS
     await storage.bucket(bucketName).file(inputFile).save(text);
@@ -67,7 +67,7 @@ export const synthesizeLongAudio = async (text: string, outputFileName: string):
             name: 'ar-XA-Wavenet-B',
         },
         audioConfig: {
-            audioEncoding: 'MP3' as const,
+            audioEncoding: 'LINEAR16' as const,
         },
         outputGcsUri: `gs://${bucketName}/${outputFile}`,
     };
