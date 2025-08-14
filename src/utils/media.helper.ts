@@ -46,17 +46,17 @@ export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
 /**
  * Memulai proses konversi teks panjang menjadi audio secara asinkron.
  * @param text Konten teks yang panjang.
- * @param outputFileName Nama file untuk output MP3 (tanpa ekstensi).
+ * @param outputFileName Nama file untuk output (tanpa ekstensi).
  * @returns ID Operasi dari Google Cloud.
  */
 export const synthesizeLongAudio = async (text: string, outputFileName: string): Promise<string> => {
     const inputFile = `${outputFileName}.txt`;
-    const outputFile = `${outputFileName}.wav`; // <-- UBAH KE .wav
+    const outputFile = `${outputFileName}.wav`; 
 
-    // 1. Unggah file teks ke GCS
+    // Unggah file teks ke GCS
     await storage.bucket(bucketName).file(inputFile).save(text);
 
-    // 2. Siapkan request untuk Long Audio API
+    // Siapkan request untuk Long Audio API
     const request = {
         parent: `projects/${process.env.GCLOUD_PROJECT}/locations/global`,
         synthesisInput: {
@@ -72,7 +72,7 @@ export const synthesizeLongAudio = async (text: string, outputFileName: string):
         outputGcsUri: `gs://${bucketName}/${outputFile}`,
     };
 
-    // 3. Panggil API dan dapatkan ID operasi menggunakan client yang benar
+    // Panggil API dan dapatkan ID operasi menggunakan client yang benar
     const [operation] = await longAudioTtsClient.synthesizeLongAudio(request);
     const operationId = operation.name!;
     return operationId;
