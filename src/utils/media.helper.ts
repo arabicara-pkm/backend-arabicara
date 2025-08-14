@@ -1,9 +1,11 @@
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
+import { v1 as textToSpeechV1 } from '@google-cloud/text-to-speech';
 import { Storage } from '@google-cloud/storage';
 import cloudinary from '../config/cloudinary';
 import { Readable } from 'stream';
 
 const ttsClient = new TextToSpeechClient();
+const longAudioTtsClient = new textToSpeechV1.TextToSpeechLongAudioSynthesizeClient();
 const storage = new Storage();
 const bucketName = process.env.GCS_BUCKET_NAME!;
 
@@ -51,10 +53,10 @@ export const synthesizeLongAudio = async (text: string, outputFileName: string):
     const inputFile = `${outputFileName}.txt`;
     const outputFile = `${outputFileName}.mp3`;
 
-    // Unggah file teks ke GCS
+    // 1. Unggah file teks ke GCS
     await storage.bucket(bucketName).file(inputFile).save(text);
 
-    // Siapkan request untuk Long Audio API
+    // 2. Siapkan request untuk Long Audio API
     const request = {
         parent: `projects/${process.env.GCLOUD_PROJECT}/locations/global`,
         synthesisInput: {
@@ -70,8 +72,8 @@ export const synthesizeLongAudio = async (text: string, outputFileName: string):
         outputGcsUri: `gs://${bucketName}/${outputFile}`,
     };
 
-    // Panggil API dan dapatkan ID operasi
-    const [operation] = await (ttsClient as any).synthesizeLongAudio(request);
+    // 3. Panggil API dan dapatkan ID operasi menggunakan client yang benar
+    const [operation] = await longAudioTtsClient.synthesizeLongAudio(request);
     const operationId = operation.name!;
     return operationId;
 };
