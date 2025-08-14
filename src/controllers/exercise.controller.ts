@@ -24,7 +24,7 @@ export const submitForLevel = async (req: Request, res: Response) => {
         res.status(200).json({ message: 'Jawaban untuk level berhasil disubmit', data: result });
     } catch (error: any) {
         console.error('Error in submitForLevel:', error);
-        res.status(500).json({ message: 'Gagal memproses jawaban.', error: error.message });
+        res.status(500).json({ message: 'Gagal memproses jawaban.', error: error });
     }
 };
 

@@ -234,7 +234,7 @@ export const submitLevelAnswers = async (userId: string, levelId: number, data: 
             correctlyAnsweredQuestions,
         };
     } catch (err) {
-        console.error('🔥 Error in submitLevelAnswers:', err);
+        console.error('Error in submitLevelAnswers:', err);
         throw err;
     }
 };
