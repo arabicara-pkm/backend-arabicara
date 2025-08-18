@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { Storage } from '@google-cloud/storage';
 
 const prisma = new PrismaClient();
+const storage = new Storage();
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
 
 export const handleGcsNotification = async (req: Request, res: Response) => {
@@ -30,7 +32,11 @@ export const handleGcsNotification = async (req: Request, res: Response) => {
         const lessonId = parseInt(match[1]);
 
         // Buat URL publik untuk file di GCS
+        await storage.bucket(BUCKET_NAME!).file(fileName).makePublic();
+        console.log(`File gs://${BUCKET_NAME}/${fileName} telah dijadikan publik.`);
+
         const publicUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`;
+
 
         // Perbarui record lesson di database
         await prisma.lesson.update({

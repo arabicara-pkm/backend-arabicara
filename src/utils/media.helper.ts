@@ -50,23 +50,12 @@ export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
  * @returns ID Operasi dari Google Cloud.
  */
 export const synthesizeLongAudio = async (text: string, outputFileName: string): Promise<string> => {
-    const inputFile = `${outputFileName}.txt`;
     const outputFile = `${outputFileName}.wav`;
-
-    // Unggah file teks ke GCS dengan encoding UTF-8
-    const file = storage.bucket(bucketName).file(inputFile);
-    await file.save(text, {
-        metadata: {
-            contentType: 'text/plain; charset=utf-8',
-        },
-    });
 
     // Siapkan request untuk Long Audio API
     const request = {
         parent: `projects/${process.env.GCLOUD_PROJECT}/locations/global`,
-        synthesisInput: {
-            textSource: { uri: `gs://${bucketName}/${inputFile}` },
-        },
+        input: { text },
         voice: {
             languageCode: 'ar-XA',
             name: 'ar-XA-Wavenet-B',
@@ -107,7 +96,6 @@ export const deleteAudio = async (url: string) => {
 export const deleteAudioFromGCS = async (fileName: string) => {
     try {
         await storage.bucket(bucketName).file(fileName).delete();
-        await storage.bucket(bucketName).file(`${fileName.split('.')[0]}.txt`).delete(); // Hapus juga file teksnya
         console.log(`Berhasil menghapus file dari GCS: ${fileName}`);
     } catch (error) {
         console.error(`Gagal menghapus file dari GCS: ${fileName}`, error);
