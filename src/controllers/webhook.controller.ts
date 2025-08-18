@@ -16,7 +16,7 @@ export const handleGcsNotification = async (req: Request, res: Response) => {
         const dataBuffer = Buffer.from(req.body.message.data, 'base64');
         const notification = JSON.parse(dataBuffer.toString());
 
-        const fileName = notification.name; // Contoh: "lesson-123-audio.wav"
+        const fileName = notification.name;
         console.log(`Menerima notifikasi untuk file: ${fileName}`);
 
         if (!fileName || !fileName.endsWith('.wav')) {
@@ -32,11 +32,7 @@ export const handleGcsNotification = async (req: Request, res: Response) => {
         const lessonId = parseInt(match[1]);
 
         // Buat URL publik untuk file di GCS
-        await storage.bucket(BUCKET_NAME!).file(fileName).makePublic();
-        console.log(`File gs://${BUCKET_NAME}/${fileName} telah dijadikan publik.`);
-
         const publicUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`;
-
 
         // Perbarui record lesson di database
         await prisma.lesson.update({
