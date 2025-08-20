@@ -5,7 +5,13 @@ import { Prisma } from '@prisma/client';
 
 export const getAll = async (req: Request, res: Response) => {
     try {
-        const levels = await LevelService.getAllLevels();
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized: User ID not found in token." });
+        }
+
+        const levels = await LevelService.getAllLevels(userId);
         res.status(200).json({ message: 'Levels berhasil dikirimkan', data: levels });
     } catch (error: any) {
         res.status(500).json({ message: 'Gagal mengambil data level.', error: error.message });
@@ -15,9 +21,15 @@ export const getAll = async (req: Request, res: Response) => {
 export const getById = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
+        const userId = req.user?.userId;
         const { include } = req.query as { include?: string };
-        
-        const level = await LevelService.getLevelById(id, include);
+
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized: User ID not found in token." });
+        }
+
+        const level = await LevelService.getLevelById(id, userId, include);
+
         if (!level) {
             return res.status(404).json({ message: 'Level tidak ditemukan.' });
         }

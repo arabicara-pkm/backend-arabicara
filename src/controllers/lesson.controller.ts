@@ -14,8 +14,14 @@ export const getAllLessonsHandler = async (req: Request, res: Response) => {
 
 export const getLessonHandler = async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const lesson = await LessonService.getLessonById(id);
+    const id = parseInt(req.params.id);
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User ID tidak ditemukan di token." });
+    }
+
+    const lesson = await LessonService.getLessonById(id, userId);
 
     if (!lesson) {
       return res.status(404).json({ message: "Lesson tidak ditemukan." });
@@ -26,6 +32,7 @@ export const getLessonHandler = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 export const createLessonHandler = async (req: Request, res: Response) => {
   const validationResult = createLessonSchema.safeParse(req.body);

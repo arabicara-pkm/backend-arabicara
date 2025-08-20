@@ -62,6 +62,9 @@ import { z } from 'zod';
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         status:
+ *           type: string
+ *           enum: ["locked", "unlocked", "completed"] 
  *
  *     LevelWithLessons:
  *       allOf:

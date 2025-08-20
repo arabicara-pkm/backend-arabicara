@@ -16,12 +16,37 @@ export const getAllLessons = async () => {
   });
 };
 
-export const getLessonById = async (id: number) => {
-  return prisma.lesson.findUnique({
-    where: { id },
-    include: {
-      level: true,
-    },
+export const getLessonById = async (id: number, userId: string) => {
+  return await prisma.$transaction(async (tx) => {
+    const lesson = await tx.lesson.findUnique({
+      where: { id },
+      include: {
+        level: true,
+      },
+    });
+
+    if (lesson) {
+      await tx.userLessonProgress.upsert({
+        where: {
+          userId_lessonId: {
+            userId: userId,
+            lessonId: id,
+          },
+        },
+        update: {
+          status: 'completed',
+          completedAt: new Date(),
+        },
+        create: {
+          userId: userId,
+          lessonId: id,
+          status: 'completed',
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    return lesson;
   });
 };
 
