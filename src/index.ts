@@ -10,7 +10,6 @@ import levelRoutes from './api/level.routes';
 import exerciseRoutes from './api/exercise.route';
 import lessonRoutes from "./api/lesson.routes";
 import ocrRoutes from './api/ocr.routes';
-import webhookRoutes from './api/webhook.routes';
 
 dotenv.config();
 
@@ -27,7 +26,6 @@ app.use('/api/v1/lessons', lessonRoutes);
 app.use('/api/v1/levels', levelRoutes);
 app.use('/api/v1/exercises', exerciseRoutes);
 app.use('/api/v1/ocr', ocrRoutes);
-app.use('/api/v1/webhooks', webhookRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 app.listen(port, () => {
