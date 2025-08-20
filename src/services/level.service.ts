@@ -55,53 +55,70 @@ export const getLevelById = async (id: number, userId: string, includeQuery?: st
             orderBy: { sequence: 'asc' },
             include: {
                 progress: {
-                    where: {
-                        userId: userId,
-                    },
+                    where: { userId: userId },
                 },
             },
         };
     }
 
-    if (includes.includes('exercises')) {
-        includeOptions.exercises = {
-            include: {
-                choices: true,
-            },
-        };
-    }
+    // Selalu sertakan exercise untuk logika status
+    includeOptions.exercises = {
+        include: {
+            choices: true,
+        },
+    };
 
     const level = await prisma.level.findUnique({
         where: { id },
         include: includeOptions,
     });
 
-    if (level && level.lessons) {
-        let previousLessonCompleted = true;
+    if (level) {
+        if (level.lessons) {
+            let previousLessonCompleted = true;
+            const lessonsWithProgress = level.lessons as (Lesson & { progress: UserLessonProgress[] })[];
+            const transformedLessons = lessonsWithProgress.map((lesson) => {
+                const { progress, ...lessonData } = lesson;
+                let status = 'locked';
+                const isCompleted = progress.length > 0 && progress[0].status === 'completed';
+                if (isCompleted) {
+                    status = 'completed';
+                } else if (previousLessonCompleted) {
+                    status = 'unlocked';
+                }
+                previousLessonCompleted = isCompleted;
+                return { ...lessonData, status };
+            });
+            (level as any).lessons = transformedLessons;
+        }
 
-        const lessonsWithProgress = level.lessons as LessonWithProgress[];
+        if (level.exercises) {
+            // Hitung jumlah lesson yang sudah diselesaikan oleh pengguna di level ini
+            const completedLessonsCount = await prisma.userLessonProgress.count({
+                where: {
+                    userId: userId,
+                    lesson: {
+                        levelId: id,
+                    },
+                    status: 'completed',
+                },
+            });
 
-        const transformedLessons = lessonsWithProgress.map((lesson) => {
-            const { progress, ...lessonData } = lesson;
-            let status = 'locked';
+            // Hitung jumlah total lesson di level ini
+            const totalLessonsInLevel = await prisma.lesson.count({
+                where: { levelId: id },
+            });
 
-            const isCompleted = progress.length > 0 && progress[0].status === 'completed';
+            // Tentukan apakah semua lesson sudah selesai
+            const allLessonsCompleted = completedLessonsCount === totalLessonsInLevel;
 
-            if (isCompleted) {
-                status = 'completed';
-            } else if (previousLessonCompleted) {
-                status = 'unlocked';
-            }
-
-            previousLessonCompleted = isCompleted;
-
-            return {
-                ...lessonData,
-                status,
-            };
-        });
-
-        (level as any).lessons = transformedLessons;
+            // Tambahkan status ke setiap exercise
+            const transformedExercises = level.exercises.map(exercise => ({
+                ...exercise,
+                status: allLessonsCompleted ? 'unlocked' : 'locked',
+            }));
+            (level as any).exercises = transformedExercises;
+        }
     }
 
     return level;
