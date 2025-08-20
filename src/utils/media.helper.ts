@@ -105,35 +105,6 @@ export const createMultiLanguageAudio = async (content: string): Promise<Buffer>
 };
 
 /**
- * Memulai proses konversi teks panjang menjadi audio secara asinkron.
- * @param text Konten teks yang panjang.
- * @param outputFileName Nama file untuk output (tanpa ekstensi).
- * @returns ID Operasi dari Google Cloud.
- */
-export const synthesizeLongAudio = async (text: string, outputFileName: string): Promise<string> => {
-    const outputFile = `${outputFileName}.wav`;
-
-    // Siapkan request untuk Long Audio API
-    const request = {
-        parent: `projects/${process.env.GCLOUD_PROJECT}/locations/global`,
-        input: { text },
-        voice: {
-            languageCode: 'ar-XA',
-            name: 'ar-XA-Wavenet-B',
-        },
-        audioConfig: {
-            audioEncoding: 'LINEAR16' as const,
-        },
-        outputGcsUri: `gs://${bucketName}/${outputFile}`,
-    };
-
-    // Panggil API dan dapatkan ID operasi menggunakan client yang benar
-    const [operation] = await longAudioTtsClient.synthesizeLongAudio(request);
-    const operationId = operation.name!;
-    return operationId;
-};
-
-/**
  * Menghapus file audio dari Cloudinary.
  * @param url URL file di Cloudinary.
  */
@@ -147,18 +118,5 @@ export const deleteAudio = async (url: string) => {
         console.log(`Berhasil menghapus audio: ${publicId}`);
     } catch (error) {
         console.error("Gagal menghapus audio dari Cloudinary:", error);
-    }
-};
-
-/**
- * Menghapus file dari Google Cloud Storage.
- * @param fileName Nama file yang akan dihapus (misal: "lesson-123-audio.mp3").
- */
-export const deleteAudioFromGCS = async (fileName: string) => {
-    try {
-        await storage.bucket(bucketName).file(fileName).delete();
-        console.log(`Berhasil menghapus file dari GCS: ${fileName}`);
-    } catch (error) {
-        console.error(`Gagal menghapus file dari GCS: ${fileName}`, error);
     }
 };

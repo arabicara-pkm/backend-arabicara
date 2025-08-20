@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import z from "zod";
 import { createLessonSchema, updateLessonSchema } from "../schemas/lesson.schema";
-import { synthesizeLongAudio, deleteAudioFromGCS, createMultiLanguageAudio, uploadAudioStream, deleteAudio } from '../utils/media.helper';
+import { createMultiLanguageAudio, uploadAudioStream, deleteAudio } from '../utils/media.helper';
 
 const prisma = new PrismaClient();
 
@@ -96,7 +96,7 @@ export const deleteLesson = async (id: number) => {
     // Hapus file audio dari GCS jika ada
     if (lessonToDelete.voicePath) {
       const fileName = lessonToDelete.voicePath.split('/').pop();
-      if (fileName) await deleteAudioFromGCS(fileName);
+      if (fileName) await deleteAudio(fileName);
     }
 
     // Hapus record lesson dari database

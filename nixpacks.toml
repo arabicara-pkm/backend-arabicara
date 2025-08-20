@@ -1,0 +1,5 @@
+# nixpacks.toml
+
+[phases.build]
+# Perintah untuk menginstal paket sistem sebelum build
+aptPkgs = ["ffmpeg"]
