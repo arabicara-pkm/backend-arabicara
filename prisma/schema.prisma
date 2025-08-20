@@ -93,8 +93,6 @@ model Lesson {
   title     String
   content   String   @db.Text
   voicePath String?  @map("voice_path")
-  audioStatus String? @default("NONE") @map("audio_status") // Pilihan: NONE, PROCESSING, COMPLETED, FAILED
-  audioOperationId String? @unique @map("audio_operation_id") // Untuk melacak job di Google Cloud
   sequence  Int
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

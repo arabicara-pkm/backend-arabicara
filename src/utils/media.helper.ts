@@ -3,6 +3,9 @@ import { v1 as textToSpeechV1 } from '@google-cloud/text-to-speech';
 import { Storage } from '@google-cloud/storage';
 import cloudinary from '../config/cloudinary';
 import { Readable } from 'stream';
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
+import path from 'path';
 
 const ttsClient = new TextToSpeechClient();
 const longAudioTtsClient = new textToSpeechV1.TextToSpeechLongAudioSynthesizeClient();
@@ -40,6 +43,64 @@ export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
             }
         );
         Readable.from(audioBuffer).pipe(uploadStream);
+    });
+};
+
+/**
+ * Membuat satu file audio dari teks yang berisi campuran bahasa Arab dan Indonesia.
+ * @param content Teks lengkap yang akan diproses.
+ * @returns Buffer dari file MP3 yang sudah digabung.
+ */
+export const createMultiLanguageAudio = async (content: string): Promise<Buffer> => {
+    const lines = content.split('\n').filter(line => line.trim() !== '');
+    const tempDir = path.join(__dirname, 'temp_audio');
+    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+    const audioFiles: string[] = [];
+
+    // Buat file audio untuk setiap baris
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Deteksi bahasa sederhana: jika mengandung karakter Arab, anggap bahasa Arab
+        const isArabic = /[\u0600-\u06FF]/.test(line);
+        const lang: 'ar-XA' | 'id-ID' = isArabic ? 'ar-XA' : 'id-ID';
+
+        // Abaikan baris yang hanya berisi nama pembicara (misal: "Zahrah:")
+        if (/^[a-zA-Z\s]+:$/.test(line.trim())) continue;
+
+        const audioBuffer = await textToSpeech(line, lang);
+        const tempFilePath = path.join(tempDir, `segment-${i}.mp3`);
+        fs.writeFileSync(tempFilePath, audioBuffer);
+        audioFiles.push(tempFilePath);
+    }
+
+    // Gabungkan semua file audio menjadi satu menggunakan ffmpeg
+    return new Promise((resolve, reject) => {
+        if (audioFiles.length === 0) return resolve(Buffer.from(''));
+
+        const outputFilePath = path.join(tempDir, 'output.mp3');
+        const command = ffmpeg();
+
+        audioFiles.forEach(file => {
+            command.input(file);
+        });
+
+        command
+            .on('error', (err) => {
+                console.error('Error during ffmpeg processing:', err);
+                // Hapus file sementara
+                audioFiles.forEach(file => fs.unlinkSync(file));
+                if (fs.existsSync(outputFilePath)) fs.unlinkSync(outputFilePath);
+                reject(err);
+            })
+            .on('end', () => {
+                const finalBuffer = fs.readFileSync(outputFilePath);
+                // Hapus semua file sementara
+                audioFiles.forEach(file => fs.unlinkSync(file));
+                fs.unlinkSync(outputFilePath);
+                resolve(finalBuffer);
+            })
+            .mergeToFile(outputFilePath, tempDir);
     });
 };
 
