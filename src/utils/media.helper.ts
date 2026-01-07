@@ -7,16 +7,26 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import path from 'path';
 
-const ttsClient = new TextToSpeechClient();
-const longAudioTtsClient = new textToSpeechV1.TextToSpeechLongAudioSynthesizeClient();
-const storage = new Storage();
+// Parsing kredensial dari environment variable
+const gcpKeyString = process.env.GCP_SERVICE_ACCOUNT_KEY;
+
+if (!gcpKeyString) {
+    console.warn("⚠️ PERINGATAN: GCP_SERVICE_ACCOUNT_KEY tidak ditemukan di environment variables.");
+}
+
+const gcpKey = gcpKeyString ? JSON.parse(gcpKeyString) : undefined;
+
+const gcpOptions = gcpKey ? { credentials: gcpKey, projectId: process.env.GCLOUD_PROJECT } : {};
+
+// Inisialisasi clients dengan kredensial eksplisit
+const ttsClient = new TextToSpeechClient(gcpOptions);
+const longAudioTtsClient = new textToSpeechV1.TextToSpeechLongAudioSynthesizeClient(gcpOptions);
+const storage = new Storage(gcpOptions);
+
 const bucketName = process.env.GCS_BUCKET_NAME!;
 
 /**
  * Mengubah teks pendek menjadi audio secara langsung (sinkron).
- * @param text Teks pendek yang akan diubah.
- * @param languageCode Kode bahasa.
- * @returns Buffer audio MP3.
  */
 export const textToSpeech = async (text: string, languageCode: 'ar-XA' | 'id-ID'): Promise<Buffer> => {
     const request = {
@@ -30,8 +40,6 @@ export const textToSpeech = async (text: string, languageCode: 'ar-XA' | 'id-ID'
 
 /**
  * Mengunggah buffer audio ke Cloudinary (untuk audio pendek).
- * @param audioBuffer Buffer audio dari textToSpeechShort.
- * @returns URL aman dari file yang diunggah.
  */
 export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -48,8 +56,6 @@ export const uploadAudioStream = (audioBuffer: Buffer): Promise<string> => {
 
 /**
  * Membuat satu file audio dari teks yang berisi campuran bahasa Arab dan Indonesia.
- * @param content Teks lengkap yang akan diproses.
- * @returns Buffer dari file MP3 yang sudah digabung.
  */
 export const createMultiLanguageAudio = async (content: string): Promise<Buffer> => {
     const lines = content.split('\n').filter(line => line.trim() !== '');
@@ -58,23 +64,23 @@ export const createMultiLanguageAudio = async (content: string): Promise<Buffer>
 
     const audioFiles: string[] = [];
 
-    // Buat file audio untuk setiap baris
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        // Deteksi bahasa sederhana: jika mengandung karakter Arab, anggap bahasa Arab
         const isArabic = /[\u0600-\u06FF]/.test(line);
         const lang: 'ar-XA' | 'id-ID' = isArabic ? 'ar-XA' : 'id-ID';
 
-        // Abaikan baris yang hanya berisi nama pembicara (misal: "Zahrah:")
         if (/^[a-zA-Z\s]+:$/.test(line.trim())) continue;
 
-        const audioBuffer = await textToSpeech(line, lang);
-        const tempFilePath = path.join(tempDir, `segment-${i}.mp3`);
-        fs.writeFileSync(tempFilePath, audioBuffer);
-        audioFiles.push(tempFilePath);
+        try {
+            const audioBuffer = await textToSpeech(line, lang);
+            const tempFilePath = path.join(tempDir, `segment-${i}.mp3`);
+            fs.writeFileSync(tempFilePath, audioBuffer);
+            audioFiles.push(tempFilePath);
+        } catch (err) {
+            console.error(`Gagal TTS untuk baris: ${line}`, err);
+        }
     }
 
-    // Gabungkan semua file audio menjadi satu menggunakan ffmpeg
     return new Promise((resolve, reject) => {
         if (audioFiles.length === 0) return resolve(Buffer.from(''));
 
@@ -88,15 +94,13 @@ export const createMultiLanguageAudio = async (content: string): Promise<Buffer>
         command
             .on('error', (err) => {
                 console.error('Error during ffmpeg processing:', err);
-                // Hapus file sementara
-                audioFiles.forEach(file => fs.unlinkSync(file));
+                audioFiles.forEach(file => fs.existsSync(file) && fs.unlinkSync(file));
                 if (fs.existsSync(outputFilePath)) fs.unlinkSync(outputFilePath);
                 reject(err);
             })
             .on('end', () => {
                 const finalBuffer = fs.readFileSync(outputFilePath);
-                // Hapus semua file sementara
-                audioFiles.forEach(file => fs.unlinkSync(file));
+                audioFiles.forEach(file => fs.existsSync(file) && fs.unlinkSync(file));
                 fs.unlinkSync(outputFilePath);
                 resolve(finalBuffer);
             })
@@ -106,7 +110,6 @@ export const createMultiLanguageAudio = async (content: string): Promise<Buffer>
 
 /**
  * Menghapus file audio dari Cloudinary.
- * @param url URL file di Cloudinary.
  */
 export const deleteAudio = async (url: string) => {
     try {
