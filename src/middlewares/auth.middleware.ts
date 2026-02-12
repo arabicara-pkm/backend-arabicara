@@ -1,39 +1,48 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 import { PrismaClient } from '@prisma/client'; // <-- Tambahkan impor ini
 
 const prisma = new PrismaClient();
 
-const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-if (!SUPABASE_JWT_SECRET) {
-    throw new Error("SUPABASE_JWT_SECRET tidak ditemukan di file .env");
+if (!supabaseUrl || !supabaseKey) {
+    throw new Error("SUPABASE_URL dan SUPABASE_ANON_KEY harus ada di .env");
 }
 
-export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ message: 'Akses ditolak. Token tidak disediakan.' });
     }
 
     try {
-        const decoded = jwt.verify(token, SUPABASE_JWT_SECRET);
-        const userId = (decoded as any).sub;
+        // CARA BARU: Biarkan Supabase yang memverifikasi tokennya
+        const { data: { user }, error } = await supabase.auth.getUser(token);
 
+        if (error || !user) {
+            console.error("Supabase Auth Error:", error?.message);
+            return res.status(403).json({ message: 'Token tidak valid atau kadaluwarsa.' });
+        }
+
+        // Jika berhasil, user object dari Supabase sudah tersedia
+        // Kita simpan data penting ke req.user untuk dipakai middleware selanjutnya
         req.user = {
-            userId: userId,
-            email: (decoded as any).email,
-            role: (decoded as any).role
+            userId: user.id,
+            email: user.email || '',
+            role: user.role || ''
         };
 
         next();
+
     } catch (error: any) {
-        console.error("JWT Verification Error:", error.message);
-        console.error("Token yang diterima:", token);
-        console.error("Secret yang dipakai:", SUPABASE_JWT_SECRET);
-        return res.status(403).json({ message: 'Token tidak valid atau sudah kedaluwarsa.' });
+        console.error("Internal Auth Error:", error.message);
+        return res.status(500).json({ message: 'Terjadi kesalahan server saat verifikasi.' });
     }
 };
 
@@ -62,6 +71,6 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
             return res.status(403).json({ message: 'Akses ditolak. Membutuhkan hak akses admin.' });
         }
     } catch (error: any) {
-        return res.status(500).json({ message: error.message});
+        return res.status(500).json({ message: error.message });
     }
 };

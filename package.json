@@ -19,6 +19,7 @@
     "@google-cloud/storage": "^7.16.0",
     "@google-cloud/text-to-speech": "^6.2.0",
     "@prisma/client": "^6.11.1",
+    "@supabase/supabase-js": "^2.95.3",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.2",
