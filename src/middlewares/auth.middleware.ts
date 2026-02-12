@@ -29,7 +29,10 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         };
 
         next();
-    } catch (error) {
+    } catch (error: any) {
+        console.error("JWT Verification Error:", error.message);
+        console.error("Token yang diterima:", token);
+        console.error("Secret yang dipakai:", SUPABASE_JWT_SECRET);
         return res.status(403).json({ message: 'Token tidak valid atau sudah kedaluwarsa.' });
     }
 };
