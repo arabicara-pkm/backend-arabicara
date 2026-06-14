@@ -10,14 +10,11 @@ WORKDIR /app
 # Copy file dependency
 COPY package*.json ./
 
-# Install dependency
-RUN npm ci
-
-# Copy folder prisma
+# Copy folder prisma agar postinstall (prisma generate) bisa jalan
 COPY prisma ./prisma/
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Install dependency
+RUN npm ci
 
 # Copy seluruh source code
 COPY . .
